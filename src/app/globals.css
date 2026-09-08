@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* 
+  STRICT 3-COLOR AYUSHYA DESIGN SYSTEM
+  1. Obsidian Black:  #050806 (70% - Backgrounds, surfaces, cards)
+  2. Rich Emerald:    #087F5B (25% - Main brand color, buttons, active states, icons)
+  3. Champagne Gold:  #D4AF37 ( 5% - Luxurious accents, borders, statutory highlights)
+*/
+
+:root {
+  --obsidian-black: #050806;
+  --obsidian-card: #0A100C;
+  --obsidian-elevated: #0F1813;
+  --rich-emerald: #087F5B;
+  --emerald-hover: #0CA678;
+  --champagne-gold: #D4AF37;
+  --gold-hover: #E5C158;
+  --text-primary: #F4F8F5;
+  --text-secondary: #A8B5AC;
+  --muted-text: #718078;
+  --border-gold: rgba(212, 175, 55, 0.2);
+  --border-emerald: rgba(8, 127, 91, 0.25);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --color-background: var(--obsidian-black);
+  --color-foreground: var(--text-primary);
+}
+
+body {
+  background-color: #050806;
+  color: #F4F8F5;
+  font-family: var(--font-sans);
+}
+
+/* Atmospheric Emerald & Gold Glow */
+.bg-radial-glow {
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    rgba(8, 127, 91, 0.22),
+    transparent 55%
+  );
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: rgba(10, 16, 12, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+/* Card Hover */
+.card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 30px rgba(8, 127, 91, 0.2);
+}
+
+/* Rich Emerald Button Glow with Champagne Gold accent */
+.btn-primary-glow {
+  background-color: #087F5B;
+  color: #FFFFFF;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  transition: all 0.2s ease;
+  box-shadow: 0 0 25px rgba(8, 127, 91, 0.35);
+}
+.btn-primary-glow:hover {
+  background-color: #0CA678;
+  border-color: #D4AF37;
+  box-shadow: 0 0 35px rgba(8, 127, 91, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Gold Outline Button */
+.btn-gold-outline {
+  background-color: rgba(10, 16, 12, 0.8);
+  color: #D4AF37;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  transition: all 0.2s ease;
+}
+.btn-gold-outline:hover {
+  background-color: rgba(8, 127, 91, 0.2);
+  border-color: #D4AF37;
+  color: #F4F8F5;
+}
+
+/* Fine Grid Pattern */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(8, 127, 91, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(8, 127, 91, 0.06) 1px, transparent 1px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #050806;
+}
+::-webkit-scrollbar-thumb {
+  background: #0F1813;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #087F5B;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide-in-1 {
+  animation: fadeSlideIn 0.5s ease-out forwards;
+}
+
+.animate-fade-slide-in-2 {
+  animation: fadeSlideIn 0.5s ease-out 0.1s forwards;
+  opacity: 0;
+}
+
+.animate-fade-slide-in-3 {
+  animation: fadeSlideIn 0.5s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-fade-slide-in-4 {
+  animation: fadeSlideIn 0.5s ease-out 0.3s forwards;
+  opacity: 0;
+}
