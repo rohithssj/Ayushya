@@ -33,12 +33,12 @@ export default function AnalyzeProductPage() {
   const [stepIndex, setStepIndex] = useState(0);
 
   const processingSteps = [
-    t("analyze.processing.step1", "Understanding product formulation"),
-    t("analyze.processing.step2", "Classifying product category"),
-    t("analyze.processing.step3", "Identifying relevant regulations"),
-    t("analyze.processing.step4", "Checking applicable IP areas & Section 3(p) exclusions"),
-    t("analyze.processing.step5", "Retrieving authoritative statutory sources"),
-    t("analyze.processing.step6", "Preparing actionable recommendations"),
+    t("analyze.processing.step1", "Analyzing product formulation..."),
+    t("analyze.processing.step2", "Structuring product classification..."),
+    t("analyze.processing.step3", "Mapping relevant regulatory frameworks..."),
+    t("analyze.processing.step4", "Scanning applicable IP areas & Section 3(p)..."),
+    t("analyze.processing.step5", "Preparing statutory source templates..."),
+    t("analyze.processing.step6", "Preparing demo results..."),
   ];
 
   const handleAddIngredient = () => {
@@ -71,6 +71,7 @@ export default function AnalyzeProductPage() {
         } else {
           clearInterval(interval);
           setTimeout(() => {
+            // TODO: Replace query-based analysis data with backend analysis ID once /api/analyze is implemented.
             const analysisId = encodeURIComponent(productName.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
             router.push(
               `/analysis/${analysisId}?jurisdiction=${encodeURIComponent(jurisdiction)}&category=${encodeURIComponent(
@@ -306,10 +307,10 @@ export default function AnalyzeProductPage() {
 
             <div className="space-y-1">
               <h3 className="text-xl font-extrabold text-[#F4F8F5] font-sans">
-                {t("analyze.processing.title", "AYUSHYA AI Processing")}
+                {t("analyze.processing.title", "AYUSHYA Demo Processing")}
               </h3>
               <p className="text-xs text-[#D4AF37] font-mono">
-                {t("analyze.processing.querying", "Querying statutory RAG pipeline for")} &ldquo;{productName}&rdquo;
+                {t("analyze.processing.preparing", "Preparing demo analysis for")} &ldquo;{productName}&rdquo;
               </p>
             </div>
 

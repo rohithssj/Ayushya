@@ -106,6 +106,17 @@ export default function HumanHelpPage() {
             />
           </div>
 
+          {/* Privacy & Data-Use Statement */}
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[#050806] border border-[#D4AF37]/20 text-xs text-[#A8B5AC]">
+            <ShieldCheck className="w-4 h-4 text-[#087F5B] shrink-0 mt-0.5" />
+            <span>
+              {t(
+                "help.privacyNotice",
+                "Your information will be used only to process your support request and may be shared with the authorized AYUSHYA support team for follow-up."
+              )}
+            </span>
+          </div>
+
           <button
             type="submit"
             className="w-full btn-primary-glow py-4 px-6 rounded-2xl text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer"

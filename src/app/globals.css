@@ -38,6 +38,15 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Hero Background Image */
+.hero-bg {
+  background-image: url('/hero-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
 /* Atmospheric Emerald & Gold Glow */
 .bg-radial-glow {
   background-image: radial-gradient(
@@ -45,6 +54,25 @@ body {
     rgba(8, 127, 91, 0.22),
     transparent 55%
   );
+}
+
+/* Hero overlay dark gradient for text readability */
+.hero-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 8, 6, 0.45) 0%,
+    rgba(5, 8, 6, 0.60) 50%,
+    rgba(5, 8, 6, 0.92) 100%
+  );
+}
+
+/* Glass hero card */
+.glass-hero {
+  background: rgba(5, 10, 7, 0.55);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  box-shadow: 0 8px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,175,55,0.1);
 }
 
 /* Glassmorphism Panel */
@@ -129,21 +157,72 @@ body {
   }
 }
 
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(8,127,91,0.3); }
+  50% { box-shadow: 0 0 45px rgba(8,127,91,0.6), 0 0 80px rgba(212,175,55,0.15); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
 .animate-fade-slide-in-1 {
-  animation: fadeSlideIn 0.5s ease-out forwards;
+  animation: fadeSlideIn 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
 }
 
 .animate-fade-slide-in-2 {
-  animation: fadeSlideIn 0.5s ease-out 0.1s forwards;
+  animation: fadeSlideIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.12s forwards;
   opacity: 0;
 }
 
 .animate-fade-slide-in-3 {
-  animation: fadeSlideIn 0.5s ease-out 0.2s forwards;
+  animation: fadeSlideIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.24s forwards;
   opacity: 0;
 }
 
 .animate-fade-slide-in-4 {
-  animation: fadeSlideIn 0.5s ease-out 0.3s forwards;
+  animation: fadeSlideIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.36s forwards;
   opacity: 0;
+}
+
+.animate-float {
+  animation: floatUp 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Gold shimmer text */
+.text-shimmer {
+  background: linear-gradient(90deg, #D4AF37 0%, #F5D87A 40%, #D4AF37 60%, #E5C158 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Step connector line */
+.step-connector {
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent);
+}
+
+/* Stat card */
+.stat-card {
+  background: rgba(10,16,12,0.85);
+  border: 1px solid rgba(212,175,55,0.2);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.stat-card:hover {
+  border-color: rgba(212,175,55,0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 20px 50px rgba(8,127,91,0.25);
 }

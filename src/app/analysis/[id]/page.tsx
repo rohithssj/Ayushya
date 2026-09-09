@@ -25,6 +25,7 @@ export default function AnalysisResultsDashboard() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
 
+  // TODO: Replace query-based analysis data with backend analysis ID once /api/analyze is implemented.
   const rawId = (params?.id as string) || "ashwagandha-wellness";
   const jurisdiction = searchParams?.get("jurisdiction") || "India";
   const customName = searchParams?.get("name");
@@ -90,11 +91,27 @@ export default function AnalysisResultsDashboard() {
 
           <div className="flex items-center gap-3">
             <div className="px-3.5 py-1.5 rounded-full bg-[#0F1813] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-bold font-mono">
-              {t("dashboard.evidenceLevel", "Evidence Level:")} <strong className="text-[#F4F8F5]">{t("dashboard.mediumHigh", "Medium-High Evidence")}</strong>
+              {t("dashboard.evidenceLevel", "Evidence Level:")} <strong className="text-[#A8B5AC]">{t("dashboard.evidenceDemo", "Pending backend retrieval")}</strong>
             </div>
-            <div className="px-3.5 py-1.5 rounded-full bg-[#087F5B] text-white text-xs font-bold font-mono border border-[#D4AF37]/40 shadow-md">
-              {t("dashboard.confidence", "AI RAG Confidence:")} <strong>87%</strong>
+            <div className="px-3.5 py-1.5 rounded-full bg-[#0F1813] text-[#A8B5AC] text-xs font-bold font-mono border border-[#D4AF37]/40">
+              {t("dashboard.confidence", "AI RAG Confidence:")} <strong className="text-[#D4AF37]">{t("dashboard.confidenceDemo", "Not calculated (Demo)")}</strong>
             </div>
+          </div>
+        </div>
+
+        {/* Prominent DEMO / MOCK Label Banner */}
+        <div className="p-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-start gap-3 text-xs text-[#D4AF37]">
+          <AlertTriangle className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold uppercase tracking-wider font-mono">
+              {t("dashboard.demoBannerTitle", "DEMO / MOCK — Not evidence-backed")}
+            </p>
+            <p className="text-[#A8B5AC] font-sans">
+              {t(
+                "dashboard.demoBannerDesc",
+                "This dashboard displays sample mock results for UI evaluation. Findings, section references, and classifications have not been retrieved by the RAG backend and do not constitute legal advice."
+              )}
+            </p>
           </div>
         </div>
 
@@ -137,35 +154,35 @@ export default function AnalysisResultsDashboard() {
                 <p className="text-xs text-[#A8B5AC]">{t("dashboard.overview.regulatedUnder", "Regulated under FSSAI / AYUSH Guidelines")}</p>
               </div>
 
-              {/* Card 2: Confidence Indicator Bar */}
+              {/* Card 2: Confidence Indicator Placeholder */}
               <div className="p-6 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-3">
                 <div className="flex items-center justify-between text-[11px] font-bold font-mono">
                   <span className="text-[#D4AF37] uppercase tracking-wider">{t("dashboard.overview.confidenceLabel", "AI RAG Confidence")}</span>
-                  <span className="text-[#087F5B]">87%</span>
+                  <span className="text-[#D4AF37] font-sans">{t("dashboard.overview.confidenceNotCalc", "Not calculated (Demo)")}</span>
                 </div>
                 <div className="w-full bg-[#0F1813] h-3 rounded-full overflow-hidden border border-[#D4AF37]/20">
-                  <div className="bg-gradient-to-r from-[#087F5B] to-[#0CA678] h-full rounded-full w-[87%] shadow-[0_0_10px_rgba(8,127,91,0.5)]" />
+                  <div className="bg-gradient-to-r from-[#D4AF37]/20 via-[#087F5B]/30 to-[#D4AF37]/20 h-full rounded-full w-full opacity-60" />
                 </div>
-                <p className="text-xs text-[#A8B5AC]">{t("dashboard.overview.groundedIn", "Grounded in 6 verified statutory citations")}</p>
+                <p className="text-xs text-[#A8B5AC]">{t("dashboard.overview.confidencePlaceholderDesc", "Score will be calculated from retrieved evidence when backend RAG is connected")}</p>
               </div>
 
-              {/* Card 3: Key Legal Status */}
+              {/* Card 3: Key Legal Status Placeholder */}
               <div className="p-6 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-3">
                 <span className="text-[11px] font-bold text-[#D4AF37] uppercase font-mono tracking-wider">
                   {t("dashboard.overview.patentability", "Patentability Assessment")}
                 </span>
-                <p className="text-xl font-bold text-[#D4AF37]">{t("dashboard.overview.section3pExcluded", "Section 3(p) Excluded")}</p>
-                <p className="text-xs text-[#A8B5AC]">{t("dashboard.overview.priorArt", "Classical prior art exists in TKDL database")}</p>
+                <p className="text-lg font-bold text-[#D4AF37]">{t("dashboard.overview.section3pDemo", "Potentially applicable — Demo")}</p>
+                <p className="text-xs text-[#A8B5AC]">{t("dashboard.overview.priorArtDemo", "Example result — Requires verification against TKDL")}</p>
               </div>
             </div>
 
             {/* Metric Overview Grid */}
             <div className="grid md:grid-cols-4 gap-4">
               {[
-                { title: "IP Rights", status: "Trademark Registrable", color: "text-[#087F5B]" },
-                { title: "FSSAI Status", status: "Ayurveda-Aahar License Needed", color: "text-[#D4AF37]" },
-                { title: "NBA Approval", status: "Form I Clearance Mandatory", color: "text-[#D4AF37]" },
-                { title: "TKDL Prior Art", status: "High Exclusions Found", color: "text-[#D4AF37]" },
+                { title: t("dashboard.metrics.ipTitle", "IP Rights"), status: t("dashboard.metrics.ipStatus", "Demo assessment"), color: "text-[#D4AF37]" },
+                { title: t("dashboard.metrics.fssaiTitle", "FSSAI Status"), status: t("dashboard.metrics.fssaiStatus", "Potentially applicable — Demo"), color: "text-[#D4AF37]" },
+                { title: t("dashboard.metrics.nbaTitle", "NBA Approval"), status: t("dashboard.metrics.nbaStatus", "Potentially applicable — Demo"), color: "text-[#D4AF37]" },
+                { title: t("dashboard.metrics.tkdlTitle", "TKDL Prior Art"), status: t("dashboard.metrics.tkdlStatus", "Example result — Requires verification"), color: "text-[#D4AF37]" },
               ].map((m, i) => (
                 <div key={i} className="p-4 rounded-xl bg-[#0F1813] border border-[#D4AF37]/20 space-y-1">
                   <span className="text-[10px] text-[#D4AF37] font-mono uppercase font-bold">{m.title}</span>
@@ -176,11 +193,16 @@ export default function AnalysisResultsDashboard() {
 
             {/* Intelligence Summary */}
             <div className="p-6 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-3">
-              <h3 className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider font-mono">
-                {t("dashboard.overview.executiveSummary", "Executive Legal Summary")}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider font-mono">
+                  {t("dashboard.overview.executiveSummary", "Executive Legal Summary")}
+                </h3>
+                <span className="text-[10px] text-[#A8B5AC] font-mono border border-[#D4AF37]/30 px-2 py-0.5 rounded">
+                  {t("dashboard.overview.demoBadge", "Demo Preview")}
+                </span>
+              </div>
               <p className="text-sm text-[#F4F8F5] leading-relaxed">
-                For <strong>{productName}</strong> evaluated under <strong>{jurisdiction}</strong> jurisdiction, {t("dashboard.overview.summaryBody", "classical herbs documented in Ayurvedic texts are categorized under Traditional Knowledge safeguards. Patenting requires proving synergistic bio-enhancement beyond mere admixture (Section 3e/3p). Commercialization must comply with statutory FSSAI and AYUSH licensing guidelines.")}
+                <span className="text-[#D4AF37] font-semibold">[Demo Assessment]:</span> For <strong>{productName}</strong> evaluated under <strong>{jurisdiction}</strong> jurisdiction, {t("dashboard.overview.summaryBody", "classical herbs documented in Ayurvedic texts are categorized under Traditional Knowledge safeguards. Patenting requires proving synergistic bio-enhancement beyond mere admixture (Section 3e/3p). Commercialization must comply with statutory FSSAI and AYUSH licensing guidelines.")}
               </p>
             </div>
           </div>
@@ -189,29 +211,34 @@ export default function AnalysisResultsDashboard() {
         {/* IP TAB */}
         {activeTab === "ip" && (
           <div className="space-y-6 animate-fade-slide-in-1">
-            <h3 className="text-lg font-bold text-[#F4F8F5]">{t("dashboard.ip.title", "Intellectual Property Protection Assessment")}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-[#F4F8F5]">{t("dashboard.ip.title", "Intellectual Property Protection Assessment")}</h3>
+              <span className="text-xs font-mono text-[#D4AF37] bg-[#0F1813] px-2.5 py-1 rounded-full border border-[#D4AF37]/30">
+                {t("dashboard.demoBadge", "Demo Assessment")}
+              </span>
+            </div>
             <div className="grid gap-4">
               <div className="p-5 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[#087F5B]">{t("dashboard.ip.trademarkTitle", "Trademark & Brand Identity Protection")}</span>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#087F5B] text-white border border-[#D4AF37]/40">
-                    {t("dashboard.ip.highProtection", "🟢 High Protection")}
+                  <span className="font-bold text-sm text-[#D4AF37]">{t("dashboard.ip.trademarkTitle", "Trademark & Brand Identity Protection")}</span>
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#0F1813] text-[#D4AF37] border border-[#D4AF37]/40">
+                    {t("dashboard.ip.trademarkDemoBadge", "Demo Assessment — Requires Verification")}
                   </span>
                 </div>
                 <p className="text-xs text-[#A8B5AC]">
-                  {t("dashboard.ip.trademarkBody", "Unique product name, logo mark, and distinctive packaging trade dress are fully registrable under Trademarks Act, 1999.")}
+                  {t("dashboard.ip.trademarkBodyDemo", "Preliminary sample assessment: Distinctive product name, logo, and trade dress may potentially be eligible for registration under the Trademarks Act, 1999, subject to trademark search.")}
                 </p>
               </div>
 
               <div className="p-5 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[#D4AF37]">{t("dashboard.ip.sec3pTitle", "Section 3(p) Traditional Knowledge Exclusion")}</span>
+                  <span className="font-bold text-sm text-[#D4AF37]">{t("dashboard.ip.sec3pTitle", "Section 3(p) Traditional Knowledge Consideration")}</span>
                   <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#0F1813] text-[#D4AF37] border border-[#D4AF37]/40">
-                    {t("dashboard.ip.exclusionApplies", "🟡 Statutory Exclusion Applies")}
+                    {t("dashboard.ip.sec3pDemoBadge", "Potentially applicable — Demo")}
                   </span>
                 </div>
                 <p className="text-xs text-[#A8B5AC]">
-                  {t("dashboard.ip.sec3pBody", "Section 3(p) of Patents Act 1970 excludes inventions which in effect are traditional knowledge or an aggregation or duplication of known properties of traditionally known components.")}
+                  {t("dashboard.ip.sec3pBodyDemo", "Example assessment: Section 3(p) of the Patents Act 1970 may exclude traditional Ayurvedic formulations unless non-obvious synergistic efficacy is evidenced. Requires verification against TKDL.")}
                 </p>
               </div>
             </div>
@@ -242,14 +269,22 @@ export default function AnalysisResultsDashboard() {
         {/* COMPLIANCE TAB */}
         {activeTab === "compliance" && (
           <div className="space-y-6 animate-fade-slide-in-1">
-            <h3 className="text-lg font-bold text-[#F4F8F5]">{t("dashboard.compliance.title", "Regulatory Compliance Dashboard")}</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-lg font-bold text-[#F4F8F5]">{t("dashboard.compliance.title", "Regulatory Compliance Dashboard")}</h3>
+              <span className="text-xs font-mono text-[#D4AF37] bg-[#0F1813] px-2.5 py-1 rounded-full border border-[#D4AF37]/30">
+                {t("dashboard.compliance.demoNote", "Demo checklist — Not determined")}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-[#050806] border border-[#D4AF37]/20 text-xs text-[#A8B5AC]">
+              {t("dashboard.compliance.banner", "Sample regulatory checklist items below illustrate the compliance schema. Actual status requires verification against applicable regulatory filings.")}
+            </div>
             <div className="space-y-3">
               {[
-                { title: `FSSAI Food Business License for ${productName} (Reg. 4)`, status: "Completed", icon: CheckCircle2, color: "text-[#087F5B] bg-[#0F1813]" },
-                { title: "Ayurveda Aahar Mandatory Packaging Insignia", status: "Completed", icon: CheckCircle2, color: "text-[#087F5B] bg-[#0F1813]" },
-                { title: "NBA Biological Resource Access Clearance (BD Act Sec 3)", status: "Review Required", icon: AlertTriangle, color: "text-[#D4AF37] bg-[#050806]" },
-                { title: "TKDL Prior Art Verification & Exclusion Check", status: "Completed", icon: CheckCircle2, color: "text-[#087F5B] bg-[#0F1813]" },
-                { title: "Heavy Metal & Pesticide Residue Certificate (API Vol 1)", status: "Pending", icon: Clock, color: "text-[#A8B5AC] bg-[#050806]" },
+                { title: `FSSAI Food Business License for ${productName} (Reg. 4)`, status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#D4AF37] bg-[#050806]" },
+                { title: "Ayurveda Aahar Mandatory Packaging Insignia", status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#D4AF37] bg-[#050806]" },
+                { title: "NBA Biological Resource Access Clearance (BD Act Sec 3)", status: t("dashboard.compliance.reviewDemo", "Requires verification — Demo"), icon: AlertTriangle, color: "text-[#D4AF37] bg-[#050806]" },
+                { title: "TKDL Prior Art Verification & Exclusion Check", status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#D4AF37] bg-[#050806]" },
+                { title: "Heavy Metal & Pesticide Residue Certificate (API Vol 1)", status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#A8B5AC] bg-[#050806]" },
               ].map((item, i) => {
                 const Icon = item.icon;
                 return (
@@ -315,6 +350,22 @@ export default function AnalysisResultsDashboard() {
               </div>
             </div>
 
+            {/* Demo Sources Notice Banner */}
+            <div className="p-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-start gap-3 text-xs text-[#D4AF37]">
+              <AlertTriangle className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold font-mono uppercase">
+                  {t("dashboard.sources.demoNoticeTitle", "Demo sources — actual sources will be provided by the RAG backend.")}
+                </p>
+                <p className="text-[#A8B5AC] font-sans">
+                  {t(
+                    "dashboard.sources.demoNoticeDesc",
+                    "The statutory entries below demonstrate the source catalog layout and citation card schema. They are not retrieved legal evidence for your specific formulation."
+                  )}
+                </p>
+              </div>
+            </div>
+
             <div className="grid gap-3">
               {filteredSources.map((s, idx) => (
                 <a
@@ -335,6 +386,7 @@ export default function AnalysisResultsDashboard() {
           </div>
         )}
       </div>
+
 
       {/* Floating Ask AYUSHYA Button on Bottom-Right */}
       <div className="fixed bottom-5 right-5 z-40">
