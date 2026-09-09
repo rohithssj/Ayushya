@@ -1,9 +1,9 @@
-import re
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 
 from src.features.rag.domain.embedding_retrieval import EmbeddingRetrievalResult
+from src.features.rag.domain.chunk_quality import is_retrievable_chunk
 from src.features.rag.infrastructure.embedding_store import EmbeddingStore
 
 
@@ -78,18 +78,4 @@ class EmbeddingRetriever:
 
     @staticmethod
     def _is_retrievable_chunk(chunk: Dict[str, Any]) -> bool:
-        """Exclude extracted contents/heading-only records from evidence ranking."""
-
-        text = str(chunk.get("text", ""))
-        lines = text.splitlines()
-        body = "\n".join(lines[1:]) if lines and lines[0].startswith("[") else text
-        words = re.findall(r"[A-Za-z]{2,}", body)
-        has_toc_dots = bool(re.search(r"(?:\.\.\.|…{2,})", body))
-        has_legal_provision = bool(
-            re.search(r"\b(?:shall|must|may|means|provided|prohibited|patent|approval|requirement)\b", body, re.IGNORECASE)
-        )
-        if len(words) < 4:
-            return False
-        if has_toc_dots and len(words) < 60 and not has_legal_provision:
-            return False
-        return True
+        return is_retrievable_chunk(chunk)

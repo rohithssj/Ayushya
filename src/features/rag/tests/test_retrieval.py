@@ -49,6 +49,27 @@ class LexicalRetrieverTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             retriever.search("   ")
 
+    def test_excludes_toc_chunk_but_keeps_short_legal_provision(self):
+        chunks = [
+            {
+                "chunk_id": "toc",
+                "section": "Section 2",
+                "section_title": "Legal provisions",
+                "text": "Section 2 Legal provisions................................ 4",
+            },
+            {
+                "chunk_id": "provision",
+                "section": "Section 3",
+                "section_title": "Patentability",
+                "text": "An invention may be patentable.",
+            },
+        ]
+        retriever = LexicalRetriever(".", chunks=chunks)
+
+        results = retriever.search("patentable invention", top_k=5)
+
+        self.assertEqual([result.chunk["chunk_id"] for result in results], ["provision"])
+
 
 if __name__ == "__main__":
     unittest.main()

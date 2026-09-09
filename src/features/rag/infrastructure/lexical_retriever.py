@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from src.features.rag.domain.retrieval import RetrievalResult
+from src.features.rag.domain.chunk_quality import is_retrievable_chunk
 
 
 class LexicalRetriever:
@@ -43,6 +44,8 @@ class LexicalRetriever:
         query_vector = self._tfidf_vector(query_terms)
         results: List[RetrievalResult] = []
         for chunk in self.chunks:
+            if not is_retrievable_chunk(chunk):
+                continue
             if jurisdiction and chunk.get("jurisdiction", "").lower() != jurisdiction.lower():
                 continue
             if domain and chunk.get("domain", "").lower() != domain.lower():
