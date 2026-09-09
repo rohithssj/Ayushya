@@ -273,6 +273,16 @@ export async function POST(request: Request) {
       };
     });
 
+    const evidenceStrength = (pythonResult.evidence_strength || 'insufficient') as RetrievalApiResponse['evidence_strength'];
+    const abstentionRecommended = Boolean(pythonResult.abstention_recommended);
+    const requiresHumanReview = Boolean(pythonResult.requires_human_review);
+    const evidenceAssessment = pythonResult.evidence_assessment || {
+      strength: evidenceStrength,
+      abstention_recommended: abstentionRecommended,
+      requires_human_review: requiresHumanReview,
+      reasons: [],
+    };
+
     const responsePayload: RetrievalApiResponse = {
       request_id: requestId,
       query,
@@ -281,8 +291,10 @@ export async function POST(request: Request) {
       retrieval_method: 'hybrid_rrf',
       top_k,
       result_count: results.length,
-      evidence_strength: 'not_calculated',
-      abstention_recommended: false,
+      evidence_strength: evidenceStrength,
+      abstention_recommended: abstentionRecommended,
+      requires_human_review: requiresHumanReview,
+      evidence_assessment: evidenceAssessment,
       results,
     };
 
