@@ -1,3 +1,5 @@
 pypdf
+PyMuPDF
+rapidocr_onnxruntime
 numpy
 sentence-transformers
