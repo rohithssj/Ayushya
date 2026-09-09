@@ -63,6 +63,15 @@ export interface RetrievalResultItem {
   metadata: RetrievalResultMetadata;
 }
 
+export type EvidenceStrength = 'strong' | 'moderate' | 'weak' | 'insufficient';
+
+export interface EvidenceAssessment {
+  strength: EvidenceStrength;
+  abstention_recommended: boolean;
+  requires_human_review: boolean;
+  reasons: string[];
+}
+
 export interface RetrievalApiResponse {
   request_id: string;
   query: string;
@@ -71,8 +80,10 @@ export interface RetrievalApiResponse {
   retrieval_method: 'hybrid_rrf';
   top_k: number;
   result_count: number;
-  evidence_strength: 'not_calculated';
+  evidence_strength: EvidenceStrength;
   abstention_recommended: boolean;
+  requires_human_review: boolean;
+  evidence_assessment: EvidenceAssessment;
   results: RetrievalResultItem[];
 }
 

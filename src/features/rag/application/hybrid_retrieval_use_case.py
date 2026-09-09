@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, List, Optional
 
+from src.features.rag.domain.evidence_evaluator import EvidenceEvaluator
 from src.features.rag.domain.hybrid_retrieval import HybridRetrievalResult
 from src.features.rag.infrastructure.embedding_retriever import EmbeddingRetriever
 from src.features.rag.infrastructure.hybrid_retriever import HybridRetriever
@@ -39,9 +40,12 @@ class HybridRetrievalUseCase:
             domain=domain,
         )
         
-        # Check if we have meaningful results (abstention logic placeholder)
-        # We don't apply a hardcoded threshold to filter them out, 
-        # but if no candidates match filters, we return empty.
+        assessment = EvidenceEvaluator.evaluate(
+            results=results,
+            query=query,
+            jurisdiction=jurisdiction,
+            domain=domain,
+        )
         
         return {
             "query": query,
@@ -51,5 +55,9 @@ class HybridRetrievalUseCase:
             "retrieval_method": "hybrid_rrf",
             "embedding_model": self.retriever.embedding.model_name,
             "llm_generation": False,
+            "evidence_strength": assessment["strength"],
+            "abstention_recommended": assessment["abstention_recommended"],
+            "requires_human_review": assessment["requires_human_review"],
+            "evidence_assessment": assessment,
             "results": [result.to_dict() for result in results],
         }

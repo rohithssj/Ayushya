@@ -59,6 +59,14 @@ class TestRetrievalApi(unittest.TestCase):
         self.assertEqual(data["top_k"], 3)
         self.assertIn("results", data)
         self.assertGreater(len(data["results"]), 0)
+        self.assertIn("evidence_strength", data)
+        self.assertIn(data["evidence_strength"], ("strong", "moderate", "weak", "insufficient"))
+        self.assertIn("abstention_recommended", data)
+        self.assertIsInstance(data["abstention_recommended"], bool)
+        self.assertIn("requires_human_review", data)
+        self.assertIsInstance(data["requires_human_review"], bool)
+        self.assertIn("evidence_assessment", data)
+        self.assertIn("reasons", data["evidence_assessment"])
 
     def test_filters(self):
         proc = self.run_bridge("ayurveda aahara labelling requirements", "India", "ayurveda-aahar", top_k=2)
@@ -95,6 +103,9 @@ class TestRetrievalApi(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, f"Error: {proc.stderr}")
         data = json.loads(proc.stdout)
         self.assertEqual(len(data["results"]), 0)
+        self.assertEqual(data["evidence_strength"], "insufficient")
+        self.assertTrue(data["abstention_recommended"])
+        self.assertTrue(data["requires_human_review"])
 
 
 if __name__ == "__main__":
