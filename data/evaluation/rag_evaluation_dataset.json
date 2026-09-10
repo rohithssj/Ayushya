@@ -1,0 +1,200 @@
+[
+  {
+    "id": "EVAL_001",
+    "category": "Patents",
+    "query": "Can a simple mixture of known herbal ingredients with no synergistic effect be patented under Indian patent law?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "patents",
+    "expected_topic": "Section 3(d) / Section 3(e) non-patentable inventions",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["patent", "admixture", "component"]
+  },
+  {
+    "id": "EVAL_002",
+    "category": "Biodiversity / ABS",
+    "query": "What approval is required from the National Biodiversity Authority before applying for IP protection on biological resources?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "biodiversity",
+    "expected_topic": "NBA approval Section 6 of Biological Diversity Act",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["biodiversity", "approval", "biological"]
+  },
+  {
+    "id": "EVAL_003",
+    "category": "Traditional Knowledge",
+    "query": "How does the Traditional Knowledge Digital Library (TKDL) prevent invalid patenting of traditional herbal remedies under AYUSH guidelines?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "patents",
+    "expected_topic": "TKDL prior art and traditional knowledge protection in patent examination guidelines",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["traditional", "knowledge", "guidelines"]
+  },
+  {
+    "id": "EVAL_004",
+    "category": "Trademarks",
+    "query": "Can a generic name of an Ayurvedic formulation listed in classical texts be registered as a trademark in India?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "trademarks",
+    "expected_topic": "Generic or descriptive mark prohibition under Trademarks Act",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["trademark", "mark", "register"]
+  },
+  {
+    "id": "EVAL_005",
+    "category": "GI",
+    "query": "Who can apply for Geographical Indication tag registration for a traditional Ayurvedic product in India?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "gi",
+    "expected_topic": "Geographical Indications of Goods Act application rules",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["geographical", "indication", "producer"]
+  },
+  {
+    "id": "EVAL_006",
+    "category": "Copyright",
+    "query": "Is a database or compilation of classical Ayurvedic formulations protected under copyright law in India?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "copyright",
+    "expected_topic": "Copyright Act original literary work and compilation",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["copyright", "work", "literary"]
+  },
+  {
+    "id": "EVAL_007",
+    "category": "Designs",
+    "query": "Can the aesthetic shape of an Ayurvedic medicine bottle or dispenser be registered under the Designs Act 2000?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "designs",
+    "expected_topic": "Designs Act 2000 novelty and shape protection",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["design", "shape", "article"]
+  },
+  {
+    "id": "EVAL_008",
+    "category": "Ayurveda Aahara",
+    "query": "What regulatory requirements apply to food products categorized under Ayurveda Ahara under FSSAI regulations?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "ayurveda-aahar",
+    "expected_topic": "FSSAI Ayurveda Aahara regulations and labelling",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["ayurveda", "aahara", "fssai", "food"]
+  },
+  {
+    "id": "EVAL_009",
+    "category": "Drugs & Cosmetics",
+    "query": "What license is required to manufacture Ayurvedic medicines under the Drugs and Cosmetics Act?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "drugs-cosmetics",
+    "expected_topic": "Drugs and Cosmetics Act licensing for Ayurvedic drugs",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["license", "manufacture", "drug"]
+  },
+  {
+    "id": "EVAL_010",
+    "category": "Drugs & Magic Remedies",
+    "query": "Does advertising an Ayurvedic formulation as a guaranteed cure for diabetes violate the Drugs and Magic Remedies Act?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "drugs-cosmetics",
+    "expected_topic": "Drugs and Magic Remedies Objectionable Advertisements Act prohibited claims",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["advertisement", "remedies", "magic", "cure"]
+  },
+  {
+    "id": "EVAL_011",
+    "category": "TRIPS",
+    "query": "What does Article 27 of the TRIPS Agreement state regarding patentable subject matter and exceptions?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "trips",
+    "expected_topic": "TRIPS Agreement Article 27 patentable subject matter",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["trips", "patent", "article"]
+  },
+  {
+    "id": "EVAL_012",
+    "category": "PCT",
+    "query": "What is the international phase deadline for filing a Patent Cooperation Treaty (PCT) national phase application?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "treaties",
+    "expected_topic": "PCT international application and national phase timeline",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["pct", "patent", "international"]
+  },
+  {
+    "id": "EVAL_013",
+    "category": "CBD",
+    "query": "What are the objectives of the Convention on Biological Diversity regarding fair and equitable benefit sharing?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "cbd",
+    "expected_topic": "CBD Article 1 & 15 access to genetic resources and benefit sharing",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["cbd", "biological", "benefit", "sharing"]
+  },
+  {
+    "id": "EVAL_014",
+    "category": "Nagoya Protocol",
+    "query": "How does the Nagoya Protocol enforce compliance with prior informed consent (PIC) and mutually agreed terms (MAT)?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "cbd",
+    "expected_topic": "Nagoya Protocol compliance PIC and MAT mechanisms",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["nagoya", "consent", "mat", "pic"]
+  },
+  {
+    "id": "EVAL_015",
+    "category": "Unsupported / out-of-corpus questions",
+    "query": "What are the legal requirements for filing a quantum computing satellite patent in outer space under US ERISA pension law?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "unsupported",
+    "expected_topic": "Out-of-corpus non-existent topic",
+    "should_have_sufficient_evidence": false,
+    "expected_abstention": true,
+    "expected_keywords": []
+  },
+  {
+    "id": "EVAL_016",
+    "category": "Unsupported / out-of-corpus questions",
+    "query": "How does European Union maritime vessel tonnage tax affect Ayurvedic soap sales in Norway?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "unsupported",
+    "expected_topic": "Out-of-corpus foreign tax law",
+    "should_have_sufficient_evidence": false,
+    "expected_abstention": true,
+    "expected_keywords": []
+  },
+  {
+    "id": "EVAL_017",
+    "category": "Unsupported / out-of-corpus questions",
+    "query": "Under Indian railway ticket booking rules, what is the refund penalty for cancelling a Tatkal train ticket 2 hours before departure?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "unsupported",
+    "expected_topic": "Out-of-corpus Indian railway rules",
+    "should_have_sufficient_evidence": false,
+    "expected_abstention": true,
+    "expected_keywords": []
+  },
+  {
+    "id": "EVAL_018",
+    "category": "Unsupported / out-of-corpus questions",
+    "query": "What are the rules for licensing nuclear fusion reactors under the US Atomic Energy Act of 1954?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "unsupported",
+    "expected_topic": "Out-of-corpus nuclear law",
+    "should_have_sufficient_evidence": false,
+    "expected_abstention": true,
+    "expected_keywords": []
+  }
+]

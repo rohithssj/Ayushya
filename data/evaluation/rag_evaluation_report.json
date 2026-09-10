@@ -1,0 +1,664 @@
+{
+  "total_cases": 18,
+  "passed_cases": 14,
+  "failed_cases": 4,
+  "pass_rate_pct": 77.78,
+  "summary_by_dimension": {
+    "retrieval_failures": 4,
+    "evidence_failures": 4,
+    "citation_failures": 0,
+    "grounding_failures": 0,
+    "abstention_failures": 4,
+    "jurisdiction_failures": 0
+  },
+  "test_results": [
+    {
+      "test_id": "EVAL_001",
+      "category": "Patents",
+      "query": "Can a simple mixture of known herbal ingredients with no synergistic effect be patented under Indian patent law?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_002",
+      "category": "Biodiversity / ABS",
+      "query": "What approval is required from the National Biodiversity Authority before applying for IP protection on biological resources?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_003",
+      "category": "Traditional Knowledge",
+      "query": "How does the Traditional Knowledge Digital Library (TKDL) prevent invalid patenting of traditional herbal remedies under AYUSH guidelines?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_004",
+      "category": "Trademarks",
+      "query": "Can a generic name of an Ayurvedic formulation listed in classical texts be registered as a trademark in India?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_005",
+      "category": "GI",
+      "query": "Who can apply for Geographical Indication tag registration for a traditional Ayurvedic product in India?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_006",
+      "category": "Copyright",
+      "query": "Is a database or compilation of classical Ayurvedic formulations protected under copyright law in India?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_007",
+      "category": "Designs",
+      "query": "Can the aesthetic shape of an Ayurvedic medicine bottle or dispenser be registered under the Designs Act 2000?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_008",
+      "category": "Ayurveda Aahara",
+      "query": "What regulatory requirements apply to food products categorized under Ayurveda Ahara under FSSAI regulations?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_009",
+      "category": "Drugs & Cosmetics",
+      "query": "What license is required to manufacture Ayurvedic medicines under the Drugs and Cosmetics Act?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_010",
+      "category": "Drugs & Magic Remedies",
+      "query": "Does advertising an Ayurvedic formulation as a guaranteed cure for diabetes violate the Drugs and Magic Remedies Act?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_011",
+      "category": "TRIPS",
+      "query": "What does Article 27 of the TRIPS Agreement state regarding patentable subject matter and exceptions?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'International'."
+      }
+    },
+    {
+      "test_id": "EVAL_012",
+      "category": "PCT",
+      "query": "What is the international phase deadline for filing a Patent Cooperation Treaty (PCT) national phase application?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'International'."
+      }
+    },
+    {
+      "test_id": "EVAL_013",
+      "category": "CBD",
+      "query": "What are the objectives of the Convention on Biological Diversity regarding fair and equitable benefit sharing?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'International'."
+      }
+    },
+    {
+      "test_id": "EVAL_014",
+      "category": "Nagoya Protocol",
+      "query": "How does the Nagoya Protocol enforce compliance with prior informed consent (PIC) and mutually agreed terms (MAT)?",
+      "passed": true,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": true,
+        "details": "Relevant evidence retrieved matching topic keywords."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": true,
+        "details": "Evidence strength 'strong', abstention=False."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": true,
+        "details": "In-corpus query processed without false abstention."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'International'."
+      }
+    },
+    {
+      "test_id": "EVAL_015",
+      "category": "Unsupported / out-of-corpus questions",
+      "query": "What are the legal requirements for filing a quantum computing satellite patent in outer space under US ERISA pension law?",
+      "passed": false,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": false,
+        "details": "Unexpected strong evidence retrieved for out-of-corpus query."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": false,
+        "details": "Pipeline failed to recommend abstention for out-of-corpus query."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": false,
+        "details": "SAFETY VIOLATION: Pipeline did not abstain on unsupported/out-of-corpus query."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'International'."
+      }
+    },
+    {
+      "test_id": "EVAL_016",
+      "category": "Unsupported / out-of-corpus questions",
+      "query": "How does European Union maritime vessel tonnage tax affect Ayurvedic soap sales in Norway?",
+      "passed": false,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": false,
+        "details": "Unexpected strong evidence retrieved for out-of-corpus query."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": false,
+        "details": "Pipeline failed to recommend abstention for out-of-corpus query."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": false,
+        "details": "SAFETY VIOLATION: Pipeline did not abstain on unsupported/out-of-corpus query."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'International'."
+      }
+    },
+    {
+      "test_id": "EVAL_017",
+      "category": "Unsupported / out-of-corpus questions",
+      "query": "Under Indian railway ticket booking rules, what is the refund penalty for cancelling a Tatkal train ticket 2 hours before departure?",
+      "passed": false,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": false,
+        "details": "Unexpected strong evidence retrieved for out-of-corpus query."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": false,
+        "details": "Pipeline failed to recommend abstention for out-of-corpus query."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": false,
+        "details": "SAFETY VIOLATION: Pipeline did not abstain on unsupported/out-of-corpus query."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'India'."
+      }
+    },
+    {
+      "test_id": "EVAL_018",
+      "category": "Unsupported / out-of-corpus questions",
+      "query": "What are the rules for licensing nuclear fusion reactors under the US Atomic Energy Act of 1954?",
+      "passed": false,
+      "retrieval_relevance": {
+        "dimension": "Retrieval Relevance",
+        "passed": false,
+        "details": "Unexpected strong evidence retrieved for out-of-corpus query."
+      },
+      "evidence_quality": {
+        "dimension": "Evidence Quality",
+        "passed": false,
+        "details": "Pipeline failed to recommend abstention for out-of-corpus query."
+      },
+      "citation_correctness": {
+        "dimension": "Citation Correctness",
+        "passed": true,
+        "details": "All 1 citation(s) are valid and match evidence metadata."
+      },
+      "groundedness": {
+        "dimension": "Groundedness",
+        "passed": true,
+        "details": "Answer text contains valid citation references."
+      },
+      "abstention_safety": {
+        "dimension": "Abstention Safety",
+        "passed": false,
+        "details": "SAFETY VIOLATION: Pipeline did not abstain on unsupported/out-of-corpus query."
+      },
+      "jurisdiction_alignment": {
+        "dimension": "Jurisdiction/Domain Alignment",
+        "passed": true,
+        "details": "Selected evidence strictly aligned with expected jurisdiction 'International'."
+      }
+    }
+  ]
+}
