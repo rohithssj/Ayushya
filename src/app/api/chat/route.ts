@@ -153,6 +153,8 @@ export async function POST(request: Request) {
         PYTHONIOENCODING: 'utf-8',
         OPENROUTER_API_KEY: apiKey,
         LLM_MODEL: process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b',
+        LLM_FALLBACK_MODELS: process.env.LLM_FALLBACK_MODELS || '',
+        LLM_TIMEOUT_SECONDS: process.env.LLM_TIMEOUT_SECONDS || '15',
       },
     });
 

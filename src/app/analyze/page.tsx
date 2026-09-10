@@ -1,21 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Globe, ArrowRight, ShieldAlert, Plus, Trash2, Cpu, CheckCircle2, Loader2 } from "lucide-react";
+import { Sparkles, Globe, ShieldAlert, Plus, Trash2, Cpu, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
-
-interface Ingredient {
-  name: string;
-  quantity: string;
-  unit: string;
-}
+import { submitProductAnalysis } from "@/services/analysisService";
+import type { IngredientInput } from "@/features/rag/types/analysis_api";
+import type { Jurisdiction } from "@/features/rag/types/retrieval_api";
 
 export default function AnalyzeProductPage() {
   const router = useRouter();
   const { t } = useLanguage();
 
-  const [jurisdiction, setJurisdiction] = useState("India");
+  const [jurisdiction, setJurisdiction] = useState<Jurisdiction>("India");
   const [productName, setProductName] = useState("Ashwagandha Wellness Tablet");
   const [form, setForm] = useState("Tablet");
   const [category, setCategory] = useState("Ayurveda-Aahar");
@@ -23,22 +20,21 @@ export default function AnalyzeProductPage() {
     "Standardized extract formulation targeted for stress reduction and immunity enhancement using traditional processing methods."
   );
 
-  const [ingredients, setIngredients] = useState<Ingredient[]>([
+  const [ingredients, setIngredients] = useState<IngredientInput[]>([
     { name: "Ashwagandha (Withania somnifera)", quantity: "500", unit: "mg" },
     { name: "Pipali (Piper longum)", quantity: "50", unit: "mg" },
     { name: "Black Pepper", quantity: "25", unit: "mg" },
   ]);
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
+  const [processingStage, setProcessingStage] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const processingSteps = [
-    t("analyze.processing.step1", "Analyzing product formulation..."),
-    t("analyze.processing.step2", "Structuring product classification..."),
-    t("analyze.processing.step3", "Mapping relevant regulatory frameworks..."),
-    t("analyze.processing.step4", "Scanning applicable IP areas & Section 3(p)..."),
-    t("analyze.processing.step5", "Preparing statutory source templates..."),
-    t("analyze.processing.step6", "Preparing demo results..."),
+  const realProcessingStages = [
+    t("analyze.processing.step1", "Submitting product formulation..."),
+    t("analyze.processing.step2", "Querying statutory knowledge base & Section 3(p)..."),
+    t("analyze.processing.step3", "Evaluating legal evidence & regulatory standards..."),
+    t("analyze.processing.step4", "Generating grounded intelligence analysis..."),
   ];
 
   const handleAddIngredient = () => {
@@ -49,43 +45,42 @@ export default function AnalyzeProductPage() {
     setIngredients(ingredients.filter((_, i) => i !== index));
   };
 
-  const handleIngredientChange = (index: number, field: keyof Ingredient, value: string) => {
+  const handleIngredientChange = (index: number, field: keyof IngredientInput, value: string) => {
     const updated = [...ingredients];
     updated[index][field] = value;
     setIngredients(updated);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     setIsProcessing(true);
-    setStepIndex(0);
-  };
+    setProcessingStage(0);
 
-  useEffect(() => {
-    if (!isProcessing) return;
+    // Progress interval for truthful UX feedback
+    const stageTimer = setInterval(() => {
+      setProcessingStage((prev) => (prev < realProcessingStages.length - 1 ? prev + 1 : prev));
+    }, 1200);
 
-    const interval = setInterval(() => {
-      setStepIndex((prev) => {
-        if (prev < processingSteps.length - 1) {
-          return prev + 1;
-        } else {
-          clearInterval(interval);
-          setTimeout(() => {
-            // TODO: Replace query-based analysis data with backend analysis ID once /api/analyze is implemented.
-            const analysisId = encodeURIComponent(productName.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
-            router.push(
-              `/analysis/${analysisId}?jurisdiction=${encodeURIComponent(jurisdiction)}&category=${encodeURIComponent(
-                category
-              )}&name=${encodeURIComponent(productName)}`
-            );
-          }, 800);
-          return prev;
-        }
+    try {
+      const result = await submitProductAnalysis({
+        productName: productName.trim(),
+        category,
+        form,
+        description: description.trim(),
+        ingredients: ingredients.filter((i) => i.name.trim().length > 0),
+        jurisdiction,
       });
-    }, 600);
 
-    return () => clearInterval(interval);
-  }, [isProcessing, productName, jurisdiction, category, router, processingSteps.length]);
+      clearInterval(stageTimer);
+      router.push(`/analysis/${result.id}?jurisdiction=${encodeURIComponent(jurisdiction)}&category=${encodeURIComponent(category)}&name=${encodeURIComponent(productName)}`);
+    } catch (err: unknown) {
+      clearInterval(stageTimer);
+      setIsProcessing(false);
+      const msg = err instanceof Error ? err.message : "Failed to analyze formulation. Please try again.";
+      setErrorMessage(msg);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8 relative">
@@ -101,10 +96,21 @@ export default function AnalyzeProductPage() {
         <p className="text-sm text-[#A8B5AC] max-w-xl mx-auto">
           {t(
             "analyze.subtitle",
-            "Submit your product details for preliminary AI-assisted classification, Section 3(p) TK checks, and regulatory compliance identification."
+            "Submit your product details for preliminary AI-assisted classification, Section 3(p) TK checks, and regulatory compliance identification grounded in authoritative legal sources."
           )}
         </p>
       </div>
+
+      {/* Error Message Display */}
+      {errorMessage && (
+        <div className="p-4 rounded-2xl bg-red-950/40 border border-red-500/50 flex items-start gap-3 text-xs text-red-200 animate-fade-slide-in-1">
+          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold font-mono uppercase">Analysis Error</p>
+            <p className="font-sans">{errorMessage}</p>
+          </div>
+        </div>
+      )}
 
       {/* Main Enterprise Form Container */}
       <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-3xl bg-[#0A100C] border border-[#D4AF37]/20 shadow-2xl space-y-8 backdrop-blur-xl">
@@ -114,19 +120,19 @@ export default function AnalyzeProductPage() {
             <Globe className="w-4 h-4 text-[#087F5B]" />
             {t("analyze.jurisdictionLabel", "Target Jurisdiction")}
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {["India", "International", "United States", "European Union", "Japan"].map((j) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 max-w-md">
+            {(["India", "International"] as Jurisdiction[]).map((j) => (
               <button
                 type="button"
                 key={j}
                 onClick={() => setJurisdiction(j)}
-                className={`px-3 py-2.5 rounded-xl text-xs font-semibold border text-center transition-all ${
+                className={`px-4 py-3 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
                   jurisdiction === j
                     ? "bg-[#087F5B] border-[#D4AF37] text-white shadow-[0_0_15px_rgba(8,127,91,0.3)]"
                     : "bg-[#050806] border-[#D4AF37]/20 text-[#A8B5AC] hover:text-[#F4F8F5]"
                 }`}
               >
-                {j}
+                {j === "India" ? "🇮🇳 India (Acts & AYUSH Rules)" : "🌍 International (CBD/TRIPS/PCT)"}
               </button>
             ))}
           </div>
@@ -174,11 +180,11 @@ export default function AnalyzeProductPage() {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-[#050806] border border-[#D4AF37]/20 focus:border-[#087F5B] focus:ring-2 focus:ring-[#087F5B]/30 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] focus:outline-none transition-all cursor-pointer font-sans"
             >
-              <option value="Ayurveda-Aahar">Ayurveda-Aahar (Nutraceutical Food)</option>
-              <option value="Proprietary ASU Medicine">Proprietary ASU Medicine</option>
-              <option value="Classical Formulation">Classical Formulation</option>
-              <option value="Phytopharmaceutical">Phytopharmaceutical</option>
-              <option value="Ayurvedic Cosmetic">Ayurvedic Cosmetic</option>
+              <option value="Ayurveda-Aahar">Ayurveda-Aahar (FSSAI Regulations 2022)</option>
+              <option value="Proprietary ASU Medicine">Proprietary ASU Medicine (Drugs & Cosmetics Act)</option>
+              <option value="Classical Formulation">Classical Formulation (Authoritative Ayurvedic Texts)</option>
+              <option value="Phytopharmaceutical">Phytopharmaceutical (Standardized Extracts)</option>
+              <option value="Ayurvedic Cosmetic">Ayurvedic Cosmetic (Schedule S / Cosmetics Rules)</option>
             </select>
           </div>
 
@@ -204,7 +210,7 @@ export default function AnalyzeProductPage() {
             <button
               type="button"
               onClick={handleAddIngredient}
-              className="inline-flex items-center gap-1 text-xs font-bold text-[#D4AF37] bg-[#087F5B]/20 hover:bg-[#087F5B]/40 px-3 py-1.5 rounded-lg border border-[#D4AF37]/30 transition-colors"
+              className="inline-flex items-center gap-1 text-xs font-bold text-[#D4AF37] bg-[#087F5B]/20 hover:bg-[#087F5B]/40 px-3 py-1.5 rounded-lg border border-[#D4AF37]/30 transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 text-[#087F5B]" />
               <span>{t("analyze.addIngredient", "Add Ingredient")}</span>
@@ -261,7 +267,7 @@ export default function AnalyzeProductPage() {
                         <button
                           type="button"
                           onClick={() => handleRemoveIngredient(idx)}
-                          className="p-1 text-[#718078] hover:text-[#D4AF37] transition-colors"
+                          className="p-1 text-[#718078] hover:text-[#D4AF37] transition-colors cursor-pointer"
                           title="Remove ingredient"
                         >
                           <Trash2 className="w-4 h-4 text-[#D4AF37]" />
@@ -279,14 +285,15 @@ export default function AnalyzeProductPage() {
         <div className="p-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-start gap-3 text-xs text-[#D4AF37]">
           <ShieldAlert className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
           <span>
-            <strong>{t("analyze.disclaimerTitle", "Preliminary AI Notice:")}</strong> {t("analyze.disclaimerBody", "Classifications generated by AYUSHYA are preliminary decision-support assessments grounded in available statutory text and subject to verification against official Gazette notifications.")}
+            <strong>{t("analyze.disclaimerTitle", "Preliminary AI Notice:")}</strong> {t("analyze.disclaimerBody", "Classifications generated by AYUSHYA are preliminary decision-support assessments grounded in retrieved statutory evidence and subject to verification against official Gazette notifications.")}
           </span>
         </div>
 
         {/* Submit Primary Button */}
         <button
           type="submit"
-          className="w-full btn-primary-glow py-4 px-6 rounded-2xl text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
+          disabled={isProcessing}
+          className="w-full btn-primary-glow py-4 px-6 rounded-2xl text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
         >
           <CheckCircle2 className="w-5 h-5 text-[#D4AF37]" />
           <span>{t("analyze.submitBtn", "Analyze Product →")}</span>
@@ -307,18 +314,18 @@ export default function AnalyzeProductPage() {
 
             <div className="space-y-1">
               <h3 className="text-xl font-extrabold text-[#F4F8F5] font-sans">
-                {t("analyze.processing.title", "AYUSHYA Demo Processing")}
+                {t("analyze.processing.title", "AYUSHYA Legal Intelligence")}
               </h3>
               <p className="text-xs text-[#D4AF37] font-mono">
-                {t("analyze.processing.preparing", "Preparing demo analysis for")} &ldquo;{productName}&rdquo;
+                {t("analyze.processing.preparing", "Analyzing formulation for")} &ldquo;{productName}&rdquo;
               </p>
             </div>
 
-            {/* Checklist Steps Animation */}
+            {/* Real Checklist Steps Animation */}
             <div className="space-y-2.5 text-left border-t border-[#D4AF37]/20 pt-4">
-              {processingSteps.map((stepText, idx) => {
-                const isDone = idx < stepIndex;
-                const isCurrent = idx === stepIndex;
+              {realProcessingStages.map((stepText, idx) => {
+                const isDone = idx < processingStage;
+                const isCurrent = idx === processingStage;
 
                 return (
                   <div
