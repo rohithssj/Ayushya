@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Globe, ArrowRight, ShieldAlert, Plus, Trash2, Cpu, CheckCircle2, Loader2 } from "lucide-react";
+import { Sparkles, Globe, ArrowRight, ShieldAlert, Plus, Trash2, Cpu, CheckCircle2, Loader2, Scale } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Ingredient {
@@ -88,17 +88,20 @@ export default function AnalyzeProductPage() {
   }, [isProcessing, productName, jurisdiction, category, router, processingSteps.length]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 space-y-8 relative">
-      {/* Page Title */}
+    <div className="max-w-4xl mx-auto px-4 py-12 space-y-10 relative">
+      {/* Background ambient light */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#087F5B]/15 blur-[120px] pointer-events-none -z-10" />
+
+      {/* Page Title Header */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0A100C] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-mono font-semibold tracking-wide">
-          <Sparkles className="w-3.5 h-3.5 text-[#087F5B]" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#080D0A] border border-[#D4AF37]/35 text-[#F3E5AB] text-xs font-mono font-semibold tracking-wide shadow-sm">
+          <Sparkles className="w-3.5 h-3.5 text-[#10B981]" />
           <span>{t("analyze.tag", "Product Formulation Analysis")}</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#F4F8F5] tracking-tight font-sans">
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-[#F4F8F5] tracking-tight font-display">
           {t("analyze.title", "Analyze Product Formulation")}
         </h1>
-        <p className="text-sm text-[#A8B5AC] max-w-xl mx-auto">
+        <p className="text-sm text-[#A3B3A9] max-w-xl mx-auto leading-relaxed">
           {t(
             "analyze.subtitle",
             "Submit your product details for preliminary AI-assisted classification, Section 3(p) TK checks, and regulatory compliance identification."
@@ -107,23 +110,26 @@ export default function AnalyzeProductPage() {
       </div>
 
       {/* Main Enterprise Form Container */}
-      <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-3xl bg-[#0A100C] border border-[#D4AF37]/20 shadow-2xl space-y-8 backdrop-blur-xl">
+      <form
+        onSubmit={handleSubmit}
+        className="p-6 sm:p-10 rounded-3xl bg-[#090F0B]/90 border border-[rgba(212,175,55,0.2)] shadow-2xl space-y-8 backdrop-blur-2xl"
+      >
         {/* Section 1: Jurisdiction Selector */}
         <div className="space-y-3">
-          <label className="block text-xs font-bold text-[#D4AF37] uppercase tracking-wider font-mono flex items-center gap-2">
-            <Globe className="w-4 h-4 text-[#087F5B]" />
-            {t("analyze.jurisdictionLabel", "Target Jurisdiction")}
+          <label className="block text-xs font-bold text-[#F3E5AB] uppercase tracking-wider font-mono flex items-center gap-2">
+            <Globe className="w-4 h-4 text-[#10B981]" />
+            <span>{t("analyze.jurisdictionLabel", "Target Jurisdiction")}</span>
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
             {["India", "International", "United States", "European Union", "Japan"].map((j) => (
               <button
                 type="button"
                 key={j}
                 onClick={() => setJurisdiction(j)}
-                className={`px-3 py-2.5 rounded-xl text-xs font-semibold border text-center transition-all ${
+                className={`px-3.5 py-3 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
                   jurisdiction === j
-                    ? "bg-[#087F5B] border-[#D4AF37] text-white shadow-[0_0_15px_rgba(8,127,91,0.3)]"
-                    : "bg-[#050806] border-[#D4AF37]/20 text-[#A8B5AC] hover:text-[#F4F8F5]"
+                    ? "bg-gradient-to-r from-[#087F5B] to-[#059669] border-[#D4AF37] text-white shadow-[0_0_20px_rgba(8,127,91,0.35)] font-bold scale-[1.02]"
+                    : "bg-[#050806] border-[rgba(212,175,55,0.18)] text-[#A3B3A9] hover:text-[#F4F8F5] hover:border-[#D4AF37]/40"
                 }`}
               >
                 {j}
@@ -133,30 +139,39 @@ export default function AnalyzeProductPage() {
         </div>
 
         {/* Section 2: Product Information */}
-        <div className="space-y-4 pt-4 border-t border-[#D4AF37]/20">
-          <h3 className="text-sm font-bold text-[#D4AF37] uppercase tracking-wider font-mono">
-            {t("analyze.section1", "1. Product Information")}
-          </h3>
+        <div className="space-y-5 pt-6 border-t border-[rgba(212,175,55,0.18)]">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-lg bg-[#087F5B]/20 border border-[#D4AF37]/30 flex items-center justify-center text-[11px] font-bold text-[#F3E5AB] font-mono">
+              01
+            </span>
+            <h3 className="text-sm font-bold text-[#F3E5AB] uppercase tracking-wider font-mono">
+              {t("analyze.section1", "1. Product Information")}
+            </h3>
+          </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-5">
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-[#A8B5AC]">{t("analyze.productNameLabel", "Product Name")}</label>
+              <label className="block text-xs font-semibold text-[#A3B3A9]">
+                {t("analyze.productNameLabel", "Product Name")}
+              </label>
               <input
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 required
-                className="w-full bg-[#050806] border border-[#D4AF37]/20 focus:border-[#087F5B] focus:ring-2 focus:ring-[#087F5B]/30 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] placeholder-[#718078] focus:outline-none transition-all font-sans"
+                className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none transition-all font-sans"
                 placeholder={t("analyze.productNamePlaceholder", "e.g. Ashwagandha Wellness Tablet")}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-[#A8B5AC]">{t("analyze.productFormLabel", "Product Form")}</label>
+              <label className="block text-xs font-semibold text-[#A3B3A9]">
+                {t("analyze.productFormLabel", "Product Form")}
+              </label>
               <select
                 value={form}
                 onChange={(e) => setForm(e.target.value)}
-                className="w-full bg-[#050806] border border-[#D4AF37]/20 focus:border-[#087F5B] focus:ring-2 focus:ring-[#087F5B]/30 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] focus:outline-none transition-all cursor-pointer font-sans"
+                className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] focus:outline-none transition-all cursor-pointer font-sans"
               >
                 <option value="Tablet">Tablet</option>
                 <option value="Capsule">Capsule</option>
@@ -168,11 +183,13 @@ export default function AnalyzeProductPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-[#A8B5AC]">{t("analyze.categoryLabel", "Target Classification Category")}</label>
+            <label className="block text-xs font-semibold text-[#A3B3A9]">
+              {t("analyze.categoryLabel", "Target Classification Category")}
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-[#050806] border border-[#D4AF37]/20 focus:border-[#087F5B] focus:ring-2 focus:ring-[#087F5B]/30 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] focus:outline-none transition-all cursor-pointer font-sans"
+              className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] focus:outline-none transition-all cursor-pointer font-sans"
             >
               <option value="Ayurveda-Aahar">Ayurveda-Aahar (Nutraceutical Food)</option>
               <option value="Proprietary ASU Medicine">Proprietary ASU Medicine</option>
@@ -183,72 +200,79 @@ export default function AnalyzeProductPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-[#A8B5AC]">{t("analyze.descriptionLabel", "Product Description & Processing Method")}</label>
+            <label className="block text-xs font-semibold text-[#A3B3A9]">
+              {t("analyze.descriptionLabel", "Product Description & Processing Method")}
+            </label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
-              className="w-full bg-[#050806] border border-[#D4AF37]/20 focus:border-[#087F5B] focus:ring-2 focus:ring-[#087F5B]/30 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] placeholder-[#718078] focus:outline-none transition-all font-sans"
+              className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none transition-all font-sans"
               placeholder={t("analyze.descriptionPlaceholder", "Describe processing method, intended use, solvent extraction ratios...")}
             />
           </div>
         </div>
 
         {/* Section 3: Dynamic Ingredients Table */}
-        <div className="space-y-4 pt-4 border-t border-[#D4AF37]/20">
+        <div className="space-y-4 pt-6 border-t border-[rgba(212,175,55,0.18)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[#D4AF37] uppercase tracking-wider font-mono">
-              {t("analyze.section2", "2. Formulation Ingredients")}
-            </h3>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-[#087F5B]/20 border border-[#D4AF37]/30 flex items-center justify-center text-[11px] font-bold text-[#F3E5AB] font-mono">
+                02
+              </span>
+              <h3 className="text-sm font-bold text-[#F3E5AB] uppercase tracking-wider font-mono">
+                {t("analyze.section2", "2. Formulation Ingredients")}
+              </h3>
+            </div>
             <button
               type="button"
               onClick={handleAddIngredient}
-              className="inline-flex items-center gap-1 text-xs font-bold text-[#D4AF37] bg-[#087F5B]/20 hover:bg-[#087F5B]/40 px-3 py-1.5 rounded-lg border border-[#D4AF37]/30 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F3E5AB] bg-[#087F5B]/20 hover:bg-[#087F5B]/35 px-3.5 py-1.5 rounded-xl border border-[#D4AF37]/35 transition-all cursor-pointer shadow-sm active:scale-95"
             >
-              <Plus className="w-3.5 h-3.5 text-[#087F5B]" />
+              <Plus className="w-3.5 h-3.5 text-[#10B981]" />
               <span>{t("analyze.addIngredient", "Add Ingredient")}</span>
             </button>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-[#D4AF37]/20 bg-[#050806]">
+          <div className="overflow-x-auto rounded-2xl border border-[rgba(212,175,55,0.2)] bg-[#050806]">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#0F1813] text-[#D4AF37] uppercase tracking-wider font-mono text-[11px] border-b border-[#D4AF37]/20">
+              <thead className="bg-[#090F0B] text-[#F3E5AB] uppercase tracking-wider font-mono text-[11px] border-b border-[rgba(212,175,55,0.18)]">
                 <tr>
-                  <th className="p-3">{t("analyze.table.ingredient", "Ingredient Name")}</th>
-                  <th className="p-3 w-28">{t("analyze.table.quantity", "Quantity")}</th>
-                  <th className="p-3 w-24">{t("analyze.table.unit", "Unit")}</th>
-                  <th className="p-3 w-12 text-center">{t("analyze.table.action", "Action")}</th>
+                  <th className="p-3.5">{t("analyze.table.ingredient", "Ingredient Name")}</th>
+                  <th className="p-3.5 w-32">{t("analyze.table.quantity", "Quantity")}</th>
+                  <th className="p-3.5 w-28">{t("analyze.table.unit", "Unit")}</th>
+                  <th className="p-3.5 w-14 text-center">{t("analyze.table.action", "Action")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D4AF37]/10 text-[#F4F8F5]">
+              <tbody className="divide-y divide-[rgba(212,175,55,0.1)] text-[#F4F8F5]">
                 {ingredients.map((ing, idx) => (
-                  <tr key={idx} className="hover:bg-white/5">
-                    <td className="p-2.5">
+                  <tr key={idx} className="hover:bg-white/[0.03] transition-colors">
+                    <td className="p-3">
                       <input
                         type="text"
                         value={ing.name}
                         onChange={(e) => handleIngredientChange(idx, "name", e.target.value)}
                         placeholder={t("analyze.table.placeholderName", "Herbal name (botanical or classical)")}
                         required
-                        className="w-full bg-transparent border-none text-xs text-[#F4F8F5] focus:outline-none placeholder-[#718078]"
+                        className="w-full bg-transparent border-none text-xs text-[#F4F8F5] focus:outline-none placeholder-[#6C7D73] font-medium"
                       />
                     </td>
-                    <td className="p-2.5">
+                    <td className="p-3">
                       <input
                         type="text"
                         value={ing.quantity}
                         onChange={(e) => handleIngredientChange(idx, "quantity", e.target.value)}
                         placeholder="500"
                         required
-                        className="w-full bg-transparent border-none text-xs text-[#F4F8F5] focus:outline-none placeholder-[#718078]"
+                        className="w-full bg-transparent border-none text-xs text-[#F4F8F5] focus:outline-none placeholder-[#6C7D73] font-mono"
                       />
                     </td>
-                    <td className="p-2.5">
+                    <td className="p-3">
                       <select
                         value={ing.unit}
                         onChange={(e) => handleIngredientChange(idx, "unit", e.target.value)}
-                        className="bg-[#0A100C] text-[#F4F8F5] border border-[#D4AF37]/20 rounded px-2 py-1 text-xs cursor-pointer"
+                        className="bg-[#090F0B] text-[#F4F8F5] border border-[rgba(212,175,55,0.2)] rounded-lg px-2.5 py-1 text-xs cursor-pointer font-mono"
                       >
                         <option value="mg">mg</option>
                         <option value="g">g</option>
@@ -256,15 +280,15 @@ export default function AnalyzeProductPage() {
                         <option value="%">% w/w</option>
                       </select>
                     </td>
-                    <td className="p-2.5 text-center">
+                    <td className="p-3 text-center">
                       {ingredients.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveIngredient(idx)}
-                          className="p-1 text-[#718078] hover:text-[#D4AF37] transition-colors"
+                          className="p-1.5 text-[#6C7D73] hover:text-[#EF4444] hover:bg-white/[0.05] rounded-lg transition-colors cursor-pointer"
                           title="Remove ingredient"
                         >
-                          <Trash2 className="w-4 h-4 text-[#D4AF37]" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </td>
@@ -275,38 +299,45 @@ export default function AnalyzeProductPage() {
           </div>
         </div>
 
-        {/* Legal Disclaimer */}
-        <div className="p-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-start gap-3 text-xs text-[#D4AF37]">
+        {/* Legal Disclaimer Box */}
+        <div className="p-4 rounded-2xl bg-[#090F0B] border border-[#D4AF37]/25 flex items-start gap-3 text-xs text-[#F3E5AB]">
           <ShieldAlert className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
-          <span>
-            <strong>{t("analyze.disclaimerTitle", "Preliminary AI Notice:")}</strong> {t("analyze.disclaimerBody", "Classifications generated by AYUSHYA are preliminary decision-support assessments grounded in available statutory text and subject to verification against official Gazette notifications.")}
+          <span className="leading-relaxed">
+            <strong className="text-[#D4AF37] font-semibold">{t("analyze.disclaimerTitle", "Preliminary AI Notice:")}</strong>{" "}
+            <span className="text-[#A3B3A9]">
+              {t(
+                "analyze.disclaimerBody",
+                "Classifications generated by AYUSHYA are preliminary decision-support assessments grounded in available statutory text and subject to verification against official Gazette notifications."
+              )}
+            </span>
           </span>
         </div>
 
         {/* Submit Primary Button */}
         <button
           type="submit"
-          className="w-full btn-primary-glow py-4 px-6 rounded-2xl text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
+          className="w-full btn-primary-glow py-4 px-6 rounded-2xl text-white font-bold text-sm shadow-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer group tracking-wider"
         >
-          <CheckCircle2 className="w-5 h-5 text-[#D4AF37]" />
+          <Scale className="w-5 h-5 text-[#F3E5AB]" />
           <span>{t("analyze.submitBtn", "Analyze Product →")}</span>
+          <ArrowRight className="w-4 h-4 text-[#F3E5AB] group-hover:translate-x-1 transition-transform" />
         </button>
       </form>
 
       {/* RAG Processing Screen Modal */}
       {isProcessing && (
-        <div className="fixed inset-0 z-50 bg-[#050806]/95 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-slide-in-1">
-          <div className="w-full max-w-md p-8 rounded-3xl bg-[#0A100C] border border-[#D4AF37]/40 shadow-[0_0_80px_rgba(8,127,91,0.3)] space-y-6 text-center">
+        <div className="fixed inset-0 z-50 bg-[#040705]/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-slide-in-1">
+          <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-[#080D0A] border border-[#D4AF37]/40 shadow-[0_0_80px_rgba(8,127,91,0.35)] space-y-6 text-center">
             {/* Animated AYUSHYA AI Node Spinner */}
             <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/30 border-t-[#087F5B] animate-spin" />
-              <div className="w-14 h-14 rounded-2xl bg-[#087F5B] border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] shadow-[0_0_20px_rgba(8,127,91,0.5)]">
-                <Cpu className="w-7 h-7 animate-pulse text-[#D4AF37]" />
+              <div className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/30 border-t-[#10B981] animate-spin" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#087F5B] to-[#040705] border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] shadow-[0_0_25px_rgba(8,127,91,0.6)]">
+                <Cpu className="w-7 h-7 animate-pulse text-[#34D399]" />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <h3 className="text-xl font-extrabold text-[#F4F8F5] font-sans">
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-extrabold text-[#F4F8F5] font-display">
                 {t("analyze.processing.title", "AYUSHYA Demo Processing")}
               </h3>
               <p className="text-xs text-[#D4AF37] font-mono">
@@ -315,7 +346,7 @@ export default function AnalyzeProductPage() {
             </div>
 
             {/* Checklist Steps Animation */}
-            <div className="space-y-2.5 text-left border-t border-[#D4AF37]/20 pt-4">
+            <div className="space-y-2.5 text-left border-t border-[rgba(212,175,55,0.18)] pt-5">
               {processingSteps.map((stepText, idx) => {
                 const isDone = idx < stepIndex;
                 const isCurrent = idx === stepIndex;
@@ -323,20 +354,20 @@ export default function AnalyzeProductPage() {
                 return (
                   <div
                     key={idx}
-                    className={`flex items-center gap-3 text-xs p-2.5 rounded-xl transition-all ${
+                    className={`flex items-center gap-3 text-xs p-3 rounded-xl transition-all ${
                       isDone
-                        ? "text-[#D4AF37] bg-[#0F1813]"
+                        ? "text-[#34D399] bg-[#0D1611] border border-[#087F5B]/30"
                         : isCurrent
-                        ? "text-[#F4F8F5] font-bold bg-[#087F5B] border border-[#D4AF37]/40 shadow-md"
-                        : "text-[#718078]"
+                        ? "text-[#F4F8F5] font-bold bg-gradient-to-r from-[#087F5B] to-[#059669] border border-[#D4AF37]/50 shadow-lg"
+                        : "text-[#6C7D73]"
                     }`}
                   >
                     {isDone ? (
-                      <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#10B981] shrink-0" />
                     ) : isCurrent ? (
-                      <Loader2 className="w-4 h-4 text-[#D4AF37] animate-spin shrink-0" />
+                      <Loader2 className="w-4 h-4 text-[#F3E5AB] animate-spin shrink-0" />
                     ) : (
-                      <span className="w-4 h-4 rounded-full border border-[#D4AF37]/30 shrink-0 flex items-center justify-center text-[9px] font-mono">
+                      <span className="w-4 h-4 rounded-full border border-[rgba(212,175,55,0.3)] shrink-0 flex items-center justify-center text-[9px] font-mono">
                         ○
                       </span>
                     )}

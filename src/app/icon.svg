@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" width="100%" height="100%">
+  <defs>
+    <linearGradient id="shieldGrad" x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#087F5B" />
+      <stop offset="100%" stop-color="#043826" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F9E29D" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#996515" />
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="50" y1="20" x2="50" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <path d="M50 8C65 8 86 16 86 28C86 58 70 82 50 92C30 82 14 58 14 28C14 16 35 8 50 8Z" 
+        fill="url(#shieldGrad)" 
+        stroke="url(#goldGrad)" 
+        stroke-width="3" 
+        stroke-linejoin="round" />
+  <path d="M50 16C61 16 78 22 78 32C78 55 65 74 50 82C35 74 22 55 22 32C22 22 39 16 50 16Z" 
+        stroke="url(#goldGrad)" 
+        stroke-width="1.2" 
+        stroke-dasharray="3 2"
+        opacity="0.6" />
+  <path d="M50 26C45 36 43 47 50 62C57 47 55 36 50 26Z" fill="url(#goldGrad)" />
+  <path d="M46 36C38 42 34 50 44 60C45 54 46 44 46 36Z" fill="url(#goldGrad)" opacity="0.9" />
+  <path d="M54 36C62 42 66 50 56 60C55 54 54 44 54 36Z" fill="url(#goldGrad)" opacity="0.9" />
+  <path d="M40 44C29 48 27 58 40 64C41 57 41 50 40 44Z" fill="url(#emeraldGrad)" />
+  <path d="M60 44C71 48 73 58 60 64C59 57 59 50 60 44Z" fill="url(#emeraldGrad)" />
+  <path d="M36 68C43 72 57 72 64 68C60 65 40 65 36 68Z" fill="url(#goldGrad)" />
+  <circle cx="50" cy="74" r="2.5" fill="url(#goldGrad)" />
+</svg>
