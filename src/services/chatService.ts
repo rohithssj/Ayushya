@@ -1,9 +1,18 @@
+import type {
+  ChatApiRequest,
+  ChatApiResponse,
+  ChatApiErrorResponse,
+} from "@/features/rag/types/chat_api";
+import type { CitationRecord, Jurisdiction } from "@/features/rag/types/retrieval_api";
+
 export interface LegalSource {
   title: string;
   act: string;
   section: string;
   url?: string;
   jurisdiction: string;
+  authority?: string;
+  page?: number | null;
   relevanceScore?: number;
 }
 
@@ -33,154 +42,148 @@ export interface ChatResponse {
   confidence: "High" | "Medium" | "Low";
   disclaimer: string;
   requiresHumanAssistance: boolean;
+  abstained?: boolean;
 }
 
 /**
- * Multilingual Service abstraction for RAG legal intelligence API.
- * Connects frontend to AYUSHYA backend retrieval system.
- * Respects requested language while maintaining official statutory names.
+ * Maps backend CitationRecord into clean UI LegalSource.
+ * Never fabricates URLs — preserves exact source_url from metadata.
+ */
+function mapCitationToLegalSource(cit: CitationRecord): LegalSource {
+  const parts: string[] = [];
+  if (cit.section) parts.push(cit.section);
+  if (cit.section_title) parts.push(cit.section_title);
+  if (cit.subsection) parts.push(`(${cit.subsection})`);
+  if (cit.chapter) parts.push(`[${cit.chapter}]`);
+  if (cit.page_start) parts.push(`p. ${cit.page_start}`);
+
+  const sectionStr = parts.length > 0 ? parts.join(" — ") : "Statutory Provision";
+
+  return {
+    title: cit.title || "Statutory Legal Provision",
+    act: cit.document_id || cit.title || "Legal Source",
+    section: sectionStr,
+    jurisdiction: cit.jurisdiction || "India",
+    authority: cit.authority || undefined,
+    page: cit.page_start ?? undefined,
+    url: cit.source_url && (cit.source_url.startsWith("http://") || cit.source_url.startsWith("https://"))
+      ? cit.source_url
+      : undefined,
+  };
+}
+
+/**
+ * Maps backend evidence_strength to UI Confidence.
+ */
+function mapEvidenceStrengthToConfidence(strength: string): "High" | "Medium" | "Low" {
+  switch (strength.toLowerCase()) {
+    case "strong":
+      return "High";
+    case "moderate":
+      return "Medium";
+    case "weak":
+    case "insufficient":
+    default:
+      return "Low";
+  }
+}
+
+/**
+ * Real client communicating with POST /api/chat.
+ * Calls Next.js API boundary server-side. OpenRouter API keys never touch client.
  */
 export async function sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
-  // Simulate network delay for realistic RAG retrieval & LLM reasoning
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const query = request.message.trim();
+  if (!query) {
+    throw new Error("Query cannot be empty.");
+  }
 
-  const query = request.message.toLowerCase();
-  const jurisdiction = request.jurisdiction || "India";
-  const lang = request.language || "en";
-  const product = request.productName ? `for "${request.productName}"` : "";
+  const rawJur = (request.jurisdiction || "India").trim().toLowerCase();
+  const jurisdiction: Jurisdiction = rawJur.includes("international") ? "International" : "India";
 
-  // Helper translations for RAG responses preserving official law titles
-  const getMultilingualText = (key: string): string => {
-    if (lang === "te") {
-      if (key === "biodiversity") {
-        return `భారత చట్టం ప్రకారం ${product}, ఆయుర్వేద మిశ్రమాలలో జీవ వనరులు లేదా సాంప్రదాయ జ్ఞానాన్ని ఉపయోగించినప్పుడు అక్సెస్ అండ్ బెనిఫిట్ షేరింగ్ (ABS) నిబంధనలను పాటించాలి. నాచురల్ బయోడైవర్సిటీ అథారిటీ (NBA) అనుమతి మరియు వివరాల దాఖలు తప్పనిసరి. (Biological Diversity Act, 2002 & Section 3(p)).`;
-      }
-      if (key === "patent") {
-        return `పేటెంట్ రక్షణ ${product} ఆవిష్కరణ నవీనత మరియు పారిశ్రామిక ఉపయోగంపై ఆధారపడి ఉంటుంది. భారతదేశ పేటెంట్ల చట్టం Section 3(p) ప్రకారం సాంప్రదాయ గ్రంథాలలో నమోదైన ఆయుర్వేద మిశ్రమాలకు నేరుగా పేటెంట్ లభించదు. అయితే, కొత్త ఉత్ప్రేరక సమ్మేళనాలు లేదా ప్రత్యేక ప్రక్రియలకు పేటెంట్ పొందే అవకాశం ఉంది (The Patents Act 1970).`;
-      }
-      if (key === "regulatory") {
-        return `నియంత్రణ నిబంధనలు ${product} ఉత్పత్తి వర్గీకరణపై ఆధారపడి ఉంటాయి. "Ayurveda Aahar" ఉత్పత్తులు FSSAI (Ayurveda Aahar) Regulations 2022 నిబంధనలను పాటించాలి. ప్రామాణిక ఔషధాలకు Drugs and Cosmetics Rules 1945 Rule 158B కింద లైసెన్స్ పొంది ఉండాలి.`;
-      }
-      return `ఆయుష్య లభ్యమయ్యే చట్టపరమైన ఆధారాలను విశ్లేషించింది ${product}, అయితే సంబంధిత స్పష్టమైన చట్టబద్ధమైన సెక్షన్‌ను కచ్చితంగా గుర్తించలేకపోయింది. నిపుణుల సలహా కొరకు దరఖాస్తు చేసుకోండి.`;
-    }
+  // If product context is provided, attach to query for grounding
+  let combinedQuery = query;
+  if (request.productName && !query.toLowerCase().includes(request.productName.toLowerCase())) {
+    combinedQuery = `Regarding "${request.productName}": ${query}`;
+  }
 
-    if (lang === "hi") {
-      if (key === "biodiversity") {
-        return `भारतीय कानून के तहत ${product}, आयुर्वेदिक संरचनाओं में जैविक संसाधनों या पारंपरिक ज्ञान के उपयोग पर Access and Benefit Sharing (ABS) नियमों का पालन करना अनिवार्य है। नेशनल बायोडायवर्सिटी अथॉरिटी (NBA) से स्वीकृति लेना आवश्यक है। (Biological Diversity Act, 2002 & Section 3(p)).`;
-      }
-      if (key === "patent") {
-        return `पेटेंट सुरक्षा ${product} नवीनता और औद्योगिक उपयोगिता पर निर्भर करती है। भारत के पेटेंट अधिनियम की Section 3(p) के तहत पारंपरिक ग्रंथों में वर्णित आयुर्वेदिक योग गैर-पेटेंट योग्य हैं। हालांकि, नवीन प्रक्रियाओं या विशेष निष्कर्षों के लिए पेटेंट आवेदन किया जा सकता है (The Patents Act 1970).`;
-      }
-      if (key === "regulatory") {
-        return `नियामक आवश्यकताएं ${product} आपके उत्पाद के वर्गीकरण पर निर्भर करती हैं। "Ayurveda Aahar" के तहत आने वाले उत्पादों को FSSAI (Ayurveda Aahar) Regulations 2022 का पालन करना होगा। शास्त्रीय या एएसयू दवाओं को Drugs and Cosmetics Rules 1945 Rule 158B के तहत निर्माण लाइसेंस की आवश्यकता होती है।`;
-      }
-      return `आयुष्या ने उपलब्ध कानूनी स्रोतों का विश्लेषण किया ${product}, लेकिन किसी विशिष्ट वैधानिक धारा को निश्चित रूप से निर्धारित नहीं कर सका। कृपया विशेषज्ञ परामर्श का अनुरोध करें।`;
-    }
-
-    // Default English RAG Responses
-    if (key === "biodiversity") {
-      return `Under ${jurisdiction} law ${product}, Ayurvedic formulations using biological resources or traditional knowledge require compliance with Access and Benefit Sharing (ABS) mechanisms. Patent applications involving Indian biological entities must disclose source of origin and obtain approval from the National Biodiversity Authority (NBA).`;
-    }
-    if (key === "patent") {
-      return `Patent protection ${product} depends on novelty, inventive step, industrial applicability, and whether statutory exclusions apply. In India, classical Ayurvedic formulations described in traditional texts are non-patentable under Section 3(p) as traditional knowledge. However, novel synergistic combinations or specific non-obvious extracts may be eligible for process or formulation patents.`;
-    }
-    if (key === "regulatory") {
-      return `Regulatory requirements ${product} depend on your product's classification. Products categorized under "Ayurveda Aahar" must comply with FSSAI (Ayurveda Aahar) Regulations, 2022. Classical or ASU (Ayurveda, Siddha, Unani) medicines require manufacturing licenses under Rule 158B of the Drugs & Cosmetics Rules, 1945.`;
-    }
-    return `AYUSHYA analyzed available legal sources ${product} for your query, but could not confidently determine a specific statutory section. Complex formulation claims, specific herb-herb interactions, or international export considerations may require expert verification.`;
+  const payload: ChatApiRequest = {
+    query: combinedQuery,
+    jurisdiction,
+    top_k: 5,
   };
 
-  // 1. Biodiversity queries
-  if (query.includes("biodiversity") || query.includes("traditional knowledge") || query.includes("tk") || query.includes("abs")) {
-    return {
-      answer: getMultilingualText("biodiversity"),
-      sources: [
-        {
-          title: "Biological Diversity Act, 2002",
-          act: "Biological Diversity Act",
-          section: "Section 3 & Section 6",
-          jurisdiction: "India",
-          url: "https://nbaindia.org/act",
-        },
-        {
-          title: "TKDL (Traditional Knowledge Digital Library) Guidelines",
-          act: "Traditional Knowledge Safeguards",
-          section: "Prior Art Defense Guidelines",
-          jurisdiction: "India",
-          url: "https://www.tkdl.res.in",
-        },
-      ],
-      confidence: "High",
-      disclaimer: "⚠️ Informational guidance, not legal advice.",
-      requiresHumanAssistance: false,
-    };
-  }
-
-  // 2. Patent queries
-  if (query.includes("patent") || query.includes("formulation") || query.includes("novelty") || query.includes("invent")) {
-    return {
-      answer: getMultilingualText("patent"),
-      sources: [
-        {
-          title: "The Patents Act, 1970",
-          act: "Patents Act, 1970",
-          section: "Section 3(p) — Traditional Knowledge Exclusion",
-          jurisdiction: "India",
-          url: "https://ipindia.gov.in",
-        },
-        {
-          title: "The Patents Act, 1970",
-          act: "Patents Act, 1970",
-          section: "Section 3(e) — Mere Admixture Exclusion",
-          jurisdiction: "India",
-          url: "https://ipindia.gov.in",
-        },
-      ],
-      confidence: "Medium",
-      disclaimer: "⚠️ Informational guidance, not legal advice.",
-      requiresHumanAssistance: false,
-    };
-  }
-
-  // 3. Regulatory queries
-  if (query.includes("regulat") || query.includes("fssai") || query.includes("ayush") || query.includes("license") || query.includes("aahar")) {
-    return {
-      answer: getMultilingualText("regulatory"),
-      sources: [
-        {
-          title: "Food Safety and Standards (Ayurveda Aahar) Regulations, 2022",
-          act: "FSSAI Regulations",
-          section: "Regulation 4 & Schedule I",
-          jurisdiction: "India",
-          url: "https://www.fssai.gov.in",
-        },
-        {
-          title: "Drugs and Cosmetics Rules, 1945",
-          act: "Drugs & Cosmetics Act, 1940",
-          section: "Rule 158B — Licensing of ASU Drugs",
-          jurisdiction: "India",
-          url: "https://ayush.gov.in",
-        },
-      ],
-      confidence: "High",
-      disclaimer: "⚠️ Informational guidance, not legal advice.",
-      requiresHumanAssistance: false,
-    };
-  }
-
-  // 4. Default response
-  return {
-    answer: getMultilingualText("default"),
-    sources: [
-      {
-        title: "Ayurvedic Pharmacopoeia of India (API)",
-        act: "Pharmacopoeial Standards",
-        section: "General Monograph Standards",
-        jurisdiction: jurisdiction,
+  let res: Response;
+  try {
+    res = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    ],
-    confidence: "Low",
-    disclaimer: "⚠️ Informational guidance, not legal advice.",
-    requiresHumanAssistance: true,
+      body: JSON.stringify(payload),
+    });
+  } catch (netErr) {
+    throw new Error("Unable to reach AYUSHYA legal intelligence service. Please check your connection.");
+  }
+
+  if (!res.ok) {
+    let errorDetail = "Failed to retrieve legal answer.";
+    try {
+      const errData: ChatApiErrorResponse = await res.json();
+      if (errData.error?.message) {
+        errorDetail = errData.error.message;
+      }
+    } catch {
+      // Ignore JSON parse error on non-JSON response
+    }
+    throw new Error(errorDetail);
+  }
+
+  const data: ChatApiResponse = await res.json();
+
+  // Extract selected citations
+  const selectedCitations = (data.evidence?.selected || []).map((ev) =>
+    mapCitationToLegalSource(ev.citation)
+  );
+
+  const confidence = mapEvidenceStrengthToConfidence(data.evidence_strength || "insufficient");
+
+  // Handle Abstention
+  if (data.abstained) {
+    const abstentionText =
+      data.abstention_reason ||
+      "AYUSHYA could not find sufficient authoritative evidence for this question in the ingested statutory corpus.";
+
+    return {
+      answer: `${abstentionText}\n\n⚠️ Note: A human or qualified legal/regulatory review is recommended for this inquiry.`,
+      sources: selectedCitations,
+      confidence: "Low",
+      disclaimer: "⚠️ Abstention notice: Informational guidance based on available evidence, not legal advice.",
+      requiresHumanAssistance: true,
+      abstained: true,
+    };
+  }
+
+  // Handle Provider Error
+  if (data.error === "llm_provider_error") {
+    return {
+      answer: "The AI reasoning provider is currently unavailable. Retrieved statutory evidence is listed below for your review.",
+      sources: selectedCitations,
+      confidence: confidence,
+      disclaimer: "⚠️ Informational guidance based on available evidence, not legal advice.",
+      requiresHumanAssistance: true,
+      abstained: false,
+    };
+  }
+
+  const answer = data.answer || "No grounded answer could be generated from available evidence.";
+
+  return {
+    answer,
+    sources: selectedCitations,
+    confidence,
+    disclaimer: "⚠️ Informational guidance based on available evidence, not legal advice.",
+    requiresHumanAssistance: data.requires_human_review,
+    abstained: false,
   };
 }

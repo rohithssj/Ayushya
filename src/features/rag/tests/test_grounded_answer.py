@@ -487,5 +487,176 @@ class TestDomainModels(unittest.TestCase):
         self.assertEqual(d["abstention_reason"], "No evidence found.")
 
 
+# ===========================================================================
+# OpenRouterProvider Direct Unit Tests & Model Fallback Routing
+# ===========================================================================
+class TestOpenRouterProviderDirect(unittest.TestCase):
+    def setUp(self):
+        self.provider = OpenRouterProvider(
+            api_key="test-api-key",
+            model="primary-model",
+            fallback_models=["fallback-model-1", "fallback-model-2"],
+            timeout=5,
+        )
+
+    @patch("urllib.request.urlopen")
+    def test_primary_model_succeeds(self, mock_urlopen):
+        import io
+        response_body = io.BytesIO(b'{"choices": [{"message": {"content": "Primary success"}}], "model": "primary-model"}')
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = response_body.getvalue()
+        mock_resp.__enter__.return_value = mock_resp
+        mock_urlopen.return_value = mock_resp
+
+        ans = self.provider.complete(system_prompt="sys", user_prompt="usr")
+        self.assertEqual(ans, "Primary success")
+        # Ensure only 1 call was made
+        self.assertEqual(mock_urlopen.call_count, 1)
+
+    @patch("urllib.request.urlopen")
+    def test_primary_rate_limited_and_fallback_succeeds(self, mock_urlopen):
+        import urllib.error
+        import io
+        err_fp = io.BytesIO(b'{"error": {"message": "Rate limit exceeded", "code": 429}}')
+        err_429 = urllib.error.HTTPError(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            code=429,
+            msg="Too Many Requests",
+            hdrs={},
+            fp=err_fp,
+        )
+        succ_body = io.BytesIO(b'{"choices": [{"message": {"content": "Fallback success (cit_abc123)"}}], "model": "fallback-model-1"}')
+        mock_succ = MagicMock()
+        mock_succ.read.return_value = succ_body.getvalue()
+        mock_succ.__enter__.return_value = mock_succ
+
+        # First call fails with 429, second call with fallback succeeds
+        mock_urlopen.side_effect = [err_429, mock_succ]
+
+        ans = self.provider.complete(system_prompt="sys", user_prompt="usr")
+        self.assertEqual(ans, "Fallback success (cit_abc123)")
+        self.assertEqual(mock_urlopen.call_count, 2)
+
+    @patch("urllib.request.urlopen")
+    def test_primary_unavailable_and_fallback_succeeds(self, mock_urlopen):
+        import urllib.error
+        import io
+        err_503 = urllib.error.HTTPError(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            code=503,
+            msg="Service Unavailable",
+            hdrs={},
+            fp=io.BytesIO(b'{"error": "overloaded"}'),
+        )
+        succ_body = io.BytesIO(b'{"choices": [{"message": {"content": "Fallback 2 success"}}], "model": "fallback-model-2"}')
+        mock_succ = MagicMock()
+        mock_succ.read.return_value = succ_body.getvalue()
+        mock_succ.__enter__.return_value = mock_succ
+
+        # Primary (503) -> Fallback 1 (503) -> Fallback 2 (200)
+        mock_urlopen.side_effect = [err_503, err_503, mock_succ]
+
+        ans = self.provider.complete(system_prompt="sys", user_prompt="usr")
+        self.assertEqual(ans, "Fallback 2 success")
+        self.assertEqual(mock_urlopen.call_count, 3)
+
+    @patch("urllib.request.urlopen")
+    def test_primary_and_fallback_both_fail(self, mock_urlopen):
+        import urllib.error
+        import io
+        err_500 = urllib.error.HTTPError(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            code=500,
+            msg="Internal Server Error",
+            hdrs={},
+            fp=io.BytesIO(b'{"error": "server error"}'),
+        )
+        mock_urlopen.side_effect = [err_500, err_500, err_500]
+
+        with self.assertRaises(LLMUnavailableError):
+            self.provider.complete(system_prompt="sys", user_prompt="usr")
+        self.assertEqual(mock_urlopen.call_count, 3)
+
+    @patch("urllib.request.urlopen")
+    def test_all_configured_models_rate_limited(self, mock_urlopen):
+        import urllib.error
+        import io
+        err_429 = urllib.error.HTTPError(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            code=429,
+            msg="Too Many Requests",
+            hdrs={},
+            fp=io.BytesIO(b'{"error": {"message": "Rate limit exceeded", "code": 429}}'),
+        )
+        mock_urlopen.side_effect = [err_429, err_429, err_429]
+
+        with self.assertRaises(LLMRateLimitError) as ctx:
+            self.provider.complete(system_prompt="sys", user_prompt="usr")
+        self.assertIn("rate limit exceeded", str(ctx.exception).lower())
+        self.assertEqual(mock_urlopen.call_count, 3)
+
+    @patch("urllib.request.urlopen")
+    def test_auth_failure_does_not_retry_fallbacks(self, mock_urlopen):
+        import urllib.error
+        import io
+        err_401 = urllib.error.HTTPError(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            code=401,
+            msg="Unauthorized",
+            hdrs={},
+            fp=io.BytesIO(b'{"error": "Invalid API key"}'),
+        )
+        mock_urlopen.side_effect = err_401
+
+        with self.assertRaises(LLMAuthError) as ctx:
+            self.provider.complete(system_prompt="sys", user_prompt="usr")
+        self.assertIn("authentication failed", str(ctx.exception).lower())
+        # Auth error must fail immediately without wasting fallback calls
+        self.assertEqual(mock_urlopen.call_count, 1)
+
+    @patch("urllib.request.urlopen")
+    def test_no_api_key_or_raw_error_leakage(self, mock_urlopen):
+        import urllib.error
+        import io
+        err_fp = io.BytesIO(b'{"internal_secret_token": "SUPER_SECRET_INTERNAL_KEY_123", "error": "upstream exploded"}')
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            code=500,
+            msg="Internal Server Error",
+            hdrs={},
+            fp=err_fp,
+        )
+
+        with self.assertRaises(LLMUnavailableError) as ctx:
+            self.provider.complete(system_prompt="sys", user_prompt="usr")
+        err_msg = str(ctx.exception)
+        self.assertNotIn("SUPER_SECRET_INTERNAL_KEY_123", err_msg)
+        self.assertNotIn("test-api-key", err_msg)
+        self.assertIn("OpenRouter service error", err_msg)
+
+    @patch("urllib.request.urlopen")
+    def test_timeout_raises_timeout_error(self, mock_urlopen):
+        mock_urlopen.side_effect = [TimeoutError(), TimeoutError(), TimeoutError()]
+
+        with self.assertRaises(LLMTimeoutError) as ctx:
+            self.provider.complete(system_prompt="sys", user_prompt="usr")
+        self.assertIn("did not respond", str(ctx.exception).lower())
+
+
+class TestCitationValidationWithFallback(unittest.TestCase):
+    def test_citation_validation_remains_active_after_fallback(self):
+        # Even if a fallback model returns the answer, citation validation must extract and validate citation IDs
+        ev = _make_selected_evidence(citation_id="cit_abc123")
+        output = _make_retrieval_output([ev], _strong_assessment())
+
+        # Fallback model answer with valid and invalid citation IDs
+        fallback_answer = "According to Section 3 of The Patents Act (cit_abc123) and cit_hallucinated, it is not patentable."
+        result = _run_use_case(output, llm_response=fallback_answer)
+
+        self.assertFalse(result["abstained"])
+        self.assertEqual(result["citations"], ["cit_abc123"])
+        self.assertNotIn("cit_hallucinated", result["citations"])
+
+
 if __name__ == "__main__":
     unittest.main()
