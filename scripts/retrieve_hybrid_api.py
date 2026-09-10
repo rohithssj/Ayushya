@@ -13,6 +13,7 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 from src.features.rag.application.hybrid_retrieval_use_case import HybridRetrievalUseCase
+from src.features.rag.application.evidence_selection_use_case import EvidenceSelectionUseCase
 
 
 def main() -> None:
@@ -34,6 +35,7 @@ def main() -> None:
             jurisdiction=jurisdiction,
             domain=domain,
         )
+        result = EvidenceSelectionUseCase().execute(result)
         print(json.dumps(result, ensure_ascii=True))
     except Exception as e:
         error_res = {

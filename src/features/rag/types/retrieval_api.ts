@@ -72,6 +72,42 @@ export interface EvidenceAssessment {
   reasons: string[];
 }
 
+// ---------------------------------------------------------------------------
+// Phase 7 — Evidence Selection + Citation Construction types
+// ---------------------------------------------------------------------------
+
+export interface CitationRecord {
+  citation_id: string;
+  chunk_id: string;
+  document_id: string;
+  title: string;
+  section?: string | null;
+  section_title?: string | null;
+  subsection?: string | null;
+  chapter?: string | null;
+  page?: number | null;
+  page_start?: number | null;
+  page_end?: number | null;
+  jurisdiction: string;
+  domain: string;
+  authority?: string | null;
+  year?: number | null;
+  source_url?: string | null;
+}
+
+export interface SelectedEvidence {
+  evidence_id: string;
+  chunk_id: string;
+  text: string;
+  citation: CitationRecord;
+  selection_reason: string;
+}
+
+export interface EvidenceSection {
+  selected: SelectedEvidence[];
+  count: number;
+}
+
 export interface RetrievalApiResponse {
   request_id: string;
   query: string;
@@ -85,6 +121,8 @@ export interface RetrievalApiResponse {
   requires_human_review: boolean;
   evidence_assessment: EvidenceAssessment;
   results: RetrievalResultItem[];
+  /** Phase 7 — structured evidence with citations */
+  evidence?: EvidenceSection;
 }
 
 export type ErrorCode =

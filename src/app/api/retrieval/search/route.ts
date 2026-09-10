@@ -11,6 +11,7 @@ import {
   VALID_DOMAINS,
   RetrievalResultItem,
   RetrievalResultMetadata,
+  EvidenceSection,
 } from '@/features/rag/types/retrieval_api';
 
 const execFileAsync = promisify(execFile);
@@ -283,6 +284,14 @@ export async function POST(request: Request) {
       reasons: [],
     };
 
+    // Phase 7 — evidence section from Python bridge (already validated by domain layer)
+    const evidenceSection: EvidenceSection | undefined =
+      pythonResult.evidence &&
+      typeof pythonResult.evidence === 'object' &&
+      Array.isArray(pythonResult.evidence.selected)
+        ? (pythonResult.evidence as EvidenceSection)
+        : undefined;
+
     const responsePayload: RetrievalApiResponse = {
       request_id: requestId,
       query,
@@ -296,6 +305,7 @@ export async function POST(request: Request) {
       requires_human_review: requiresHumanReview,
       evidence_assessment: evidenceAssessment,
       results,
+      ...(evidenceSection !== undefined && { evidence: evidenceSection }),
     };
 
     return NextResponse.json(responsePayload, { status: 200 });
