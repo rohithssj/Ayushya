@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -13,52 +13,183 @@ import {
   Globe,
   FileText,
   CheckCircle2,
-  Star,
   TrendingUp,
   Users,
   Zap,
+  Scale,
+  Check,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import HeroLotusContainer from "@/components/Hero/HeroLotusContainer";
 
 export default function Home() {
   const { t } = useLanguage();
 
+  // Scroll tracking specifically for the Hero section transition
+  const [scrollY, setScrollY] = useState(0);
+
+  // Vertical timeline state for "How AYUSHYA Works"
+  const [activeStep, setActiveStep] = useState(0);
+  const [stepVisibility, setStepVisibility] = useState<boolean[]>([true, false, false, false, false]);
+  const [timelineProgress, setTimelineProgress] = useState(0);
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+          setScrollY(currentY);
+
+          // Calculate vertical timeline progress & step activation
+          const timelineEl = document.getElementById("how-it-works-timeline");
+          if (timelineEl) {
+            const rect = timelineEl.getBoundingClientRect();
+            const vh = window.innerHeight;
+
+            // Height & distance calculation for dynamic vertical line
+            const totalH = rect.height;
+            const scrollDistance = (vh * 0.55) - rect.top;
+            const progress = Math.max(0, Math.min(100, (scrollDistance / totalH) * 100));
+            setTimelineProgress(progress);
+
+            // Check each step element position
+            const stepEls = timelineEl.querySelectorAll<HTMLElement>("[data-step-index]");
+            let currentActive = 0;
+            const newVis: boolean[] = [];
+
+            stepEls.forEach((el, idx) => {
+              const elRect = el.getBoundingClientRect();
+              // Become visible when entering lower half of viewport
+              const isVis = elRect.top < vh * 0.88;
+              newVis[idx] = isVis;
+
+              // Step becomes active when crossing central reading line
+              if (elRect.top <= vh * 0.52) {
+                currentActive = idx;
+              }
+            });
+
+            setStepVisibility((prev) => {
+              const next = [...prev];
+              newVis.forEach((v, idx) => {
+                if (v) next[idx] = true;
+              });
+              return next;
+            });
+
+            setActiveStep(currentActive);
+          }
+
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Smooth scroll-driven opacity, scale, and parallax specifically for Hero
+  const heroOpacity = Math.max(0, Math.min(1, 1 - scrollY / 550));
+  const heroScale = 1 + Math.min(scrollY * 0.00035, 0.07);
+  const heroTranslateY = Math.min(scrollY * 0.22, 120);
+
   return (
-    <main className="min-h-screen w-full text-[#F4F8F5] relative overflow-hidden">
+    <div className="min-h-screen w-full text-[#F4F8F5] relative overflow-hidden">
+      {/* Ambient background light gradients */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-[#087F5B]/20 via-[#D4AF37]/5 to-transparent blur-[140px] pointer-events-none -z-10" />
+      <div className="absolute top-[800px] right-0 w-[500px] h-[500px] bg-[#087F5B]/10 blur-[130px] pointer-events-none -z-10" />
 
-      {/* ─── HERO SECTION with background image ─── */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* ─── HERO SECTION WITH SPECIFIC ARTWORK & SMOOTH SCROLL TRANSITION ─── */}
+      <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-12 pb-24">
+        {/* Specifically Rendered Ayurvedic Illustration Artwork with Scroll Transition */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none transition-opacity duration-300 ease-out will-change-transform overflow-hidden"
+          style={{
+            opacity: heroOpacity,
+            transform: `translateY(${heroTranslateY}px) scale(${heroScale})`,
+          }}
+          aria-hidden="true"
+        >
+          <img
+            src="/hero-ayurveda-artwork.png"
+            alt="Ayurvedic IP & Regulatory Intelligence Artwork"
+            className="w-full h-full object-cover object-center sm:object-[center_35%]"
+          />
 
-        {/* Background Image */}
-        <div className="absolute inset-0 hero-bg" aria-hidden="true" />
+          {/* Center radial vignette for maximum text readability */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse at 50% 48%, rgba(4,7,5,0.82) 0%, rgba(4,7,5,0.55) 45%, rgba(4,7,5,0.2) 75%, transparent 100%)",
+            }}
+          />
 
-        {/* Dark overlay gradient for readability */}
-        <div className="absolute inset-0 hero-overlay" aria-hidden="true" />
+          {/* Smooth bottom fade-out transition into the next section */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-44"
+            style={{
+              background: "linear-gradient(to bottom, transparent 0%, rgba(4,7,5,0.7) 40%, #040705 100%)",
+            }}
+          />
 
-        {/* Fine grid pattern on top */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+          {/* Smooth top fade for seamless navbar integration */}
+          <div
+            className="absolute inset-x-0 top-0 h-28"
+            style={{
+              background: "linear-gradient(to bottom, #040705 0%, rgba(4,7,5,0.6) 40%, transparent 100%)",
+            }}
+          />
+        </div>
+
+        {/* Engineering Grid Overlay */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none z-1" />
 
         {/* Content */}
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center py-32 space-y-8 animate-fade-slide-in-1">
-
-
-          {/* Main Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12] font-sans">
-            <span className="text-[#F4F8F5] drop-shadow-[0_2px_20px_rgba(0,0,0,0.8)]">
-              {t("home.hero.title1", "AI-Powered")}
-            </span>{" "}
-            <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#087F5B] via-[#0CA678] to-[#D4AF37] drop-shadow-[0_0_30px_rgba(8,127,91,0.5)]">
-              {t("home.hero.title2", "IP & Regulatory")}
-            </span>{" "}
-            <br className="hidden sm:block" />
-            <span className="text-[#F4F8F5] drop-shadow-[0_2px_20px_rgba(0,0,0,0.8)]">
-              {t("home.hero.title3", "Intelligence for Ayurveda")}
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-8 animate-fade-slide-in-1">
+          {/* Top Tag Badge */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#080D0A]/90 border border-[#D4AF37]/35 text-[#F3E5AB] text-xs font-mono font-medium shadow-[0_0_25px_rgba(8,127,91,0.25)] backdrop-blur-md">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#059669]" />
             </span>
-          </h1>
+            <span>Statutory Legal AI • India & International Jurisdictions</span>
+          </div>
+
+          {/* Main Headline with 3D Ayurvedic Lotus Flower Centered Directly in Background */}
+          <div className="relative flex items-center justify-center">
+            {/* 3D Interactive Ayurvedic Lotus Flower (Middel Backside of Title Text) */}
+            <div
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[480px] md:w-[600px] lg:w-[720px] xl:w-[820px] h-[340px] sm:h-[480px] md:h-[600px] lg:h-[720px] xl:h-[820px] pointer-events-none -z-10 select-none transition-opacity duration-300"
+              style={{
+                opacity: heroOpacity,
+              }}
+              aria-hidden="true"
+            >
+              <HeroLotusContainer />
+            </div>
+
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12] font-display relative z-10">
+              <span className="text-[#F4F8F5] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+                {t("home.hero.title1", "AI-Powered")}
+              </span>{" "}
+              <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] via-[#34D399] to-[#D4AF37] drop-shadow-[0_0_40px_rgba(8,127,91,0.5)]">
+                {t("home.hero.title2", "IP & Regulatory")}
+              </span>{" "}
+              <br className="hidden sm:block" />
+              <span className="text-[#F4F8F5] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+                {t("home.hero.title3", "Intelligence for Ayurveda")}
+              </span>
+            </h1>
+          </div>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-lg text-[#C8D5CC] max-w-2xl mx-auto leading-relaxed font-normal drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)]">
+          <p className="text-base sm:text-lg text-[#A3B3A9] max-w-2xl mx-auto leading-relaxed font-normal drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
             {t(
               "home.hero.description",
               "Understand intellectual property protections, traditional knowledge exclusions (Section 3p), FSSAI regulations, and biodiversity obligations with evidence-backed legal AI."
@@ -70,23 +201,23 @@ export default function Home() {
             <Link
               href="/analyze"
               id="hero-analyze-btn"
-              className="btn-primary-glow animate-pulse-glow inline-flex items-center justify-center gap-2.5 px-9 py-4 rounded-full text-sm font-bold tracking-wide text-white shadow-xl min-w-[220px]"
+              className="btn-primary-glow animate-pulse-glow inline-flex items-center justify-center gap-2.5 px-9 py-4 rounded-full text-sm font-bold tracking-wider text-white shadow-2xl min-w-[230px] group"
             >
               <span>{t("home.hero.analyzeBtn", "Analyze Your Product")}</span>
-              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+              <ArrowRight className="w-4 h-4 text-[#F3E5AB] group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/assistant"
               id="hero-assistant-btn"
-              className="btn-gold-outline inline-flex items-center justify-center gap-2 px-9 py-4 rounded-full text-sm font-semibold transition-all min-w-[220px] backdrop-blur-sm"
+              className="btn-gold-outline inline-flex items-center justify-center gap-2.5 px-9 py-4 rounded-full text-sm font-semibold transition-all min-w-[230px] group"
             >
-              <Bot className="w-4 h-4 text-[#087F5B]" />
+              <Bot className="w-4 h-4 text-[#10B981] group-hover:scale-110 transition-transform" />
               <span>{t("home.hero.askBtn", "Ask AYUSHYA AI")}</span>
             </Link>
           </div>
 
           {/* Trust Badges */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-mono">
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-3 text-xs font-mono">
             {[
               { label: t("home.badge.sourceCited", "100% Source Cited") },
               { label: t("home.badge.zeroHallucin", "Zero Hallucinations") },
@@ -94,25 +225,25 @@ export default function Home() {
             ].map((badge, i) => (
               <span
                 key={i}
-                className="flex items-center gap-1.5 text-[#A8B5AC] bg-[#050806]/75 px-4 py-2 rounded-full border border-[#D4AF37]/25 backdrop-blur-sm"
+                className="flex items-center gap-2 text-[#A3B3A9] bg-[#080D0A]/90 px-4 py-2 rounded-full border border-[#D4AF37]/25 backdrop-blur-md shadow-sm"
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#087F5B]" />
-                {badge.label}
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                <span>{badge.label}</span>
               </span>
             ))}
           </div>
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 text-[#718078] text-[10px] tracking-widest uppercase font-mono animate-float">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-[#6C7D73] text-[10px] tracking-widest uppercase font-mono animate-float">
           <span>Scroll</span>
-          <div className="w-px h-8 bg-gradient-to-b from-[#D4AF37]/60 to-transparent" />
+          <div className="w-px h-8 bg-gradient-to-b from-[#D4AF37]/70 to-transparent" />
         </div>
       </section>
 
-      {/* ─── STATS STRIP ─── */}
-      <section className="relative z-10 bg-[#050806] border-y border-[#D4AF37]/15">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* ─── STATS STRIP (ORIGINAL DESIGN MAINTAINED) ─── */}
+      <section className="relative z-10 border-y border-[rgba(212,175,55,0.15)] bg-[#040705]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: TrendingUp, value: "5,000+", label: t("home.stats.formulations", "Formulations Analyzed") },
             { icon: Shield, value: "98.6%", label: t("home.stats.accuracy", "Citation Accuracy") },
@@ -121,104 +252,305 @@ export default function Home() {
           ].map((stat, i) => {
             const Icon = stat.icon;
             return (
-              <div key={i} className="stat-card rounded-2xl p-5 text-center space-y-2">
-                <Icon className="w-5 h-5 text-[#087F5B] mx-auto" />
-                <div className="text-2xl font-extrabold text-shimmer">{stat.value}</div>
-                <div className="text-xs text-[#718078] font-mono">{stat.label}</div>
+              <div key={i} className="stat-card rounded-2xl p-6 text-center space-y-2 group">
+                <div className="w-10 h-10 rounded-xl bg-[#087F5B]/15 border border-[#087F5B]/30 flex items-center justify-center mx-auto text-[#10B981] group-hover:scale-110 transition-transform">
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div className="text-3xl font-extrabold text-shimmer font-display">{stat.value}</div>
+                <div className="text-xs text-[#6C7D73] font-mono tracking-wider">{stat.label}</div>
               </div>
             );
           })}
         </div>
       </section>
 
-      {/* ─── HOW AYUSHYA WORKS ─── */}
+      {/* ─── HOW AYUSHYA WORKS (MODERN VERTICAL STEP-BY-STEP TIMELINE) ─── */}
       <section
         id="how-it-works"
-        className="relative z-10 bg-[#050806] max-w-7xl mx-auto px-4 sm:px-6 py-20 space-y-14"
+        className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-28 scroll-mt-24 space-y-16"
       >
-        <div className="text-center space-y-3">
-          <span className="text-xs font-mono uppercase tracking-widest text-[#D4AF37] font-semibold">
-            {t("home.steps.tag", "Step-by-Step Workflow")}
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#F4F8F5] tracking-tight font-sans">
+        {/* Section Header */}
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#080D0A] border border-[#D4AF37]/30 text-[#F3E5AB] text-xs font-mono uppercase tracking-widest font-semibold shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+            <Sparkles className="w-3.5 h-3.5 text-[#10B981]" />
+            <span>{t("home.steps.tag", "Step-by-Step Workflow")}</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#F4F8F5] tracking-tight font-display">
             {t("home.steps.title", "How AYUSHYA Works")}
           </h2>
-          <p className="text-sm text-[#A8B5AC] max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-[#A3B3A9] leading-relaxed">
             {t("home.steps.subtitle", "From formulation input to source-cited statutory intelligence in five seamless steps.")}
           </p>
+
+          {/* Dynamic Stage Indicator Capsule */}
+          <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-[#090F0B]/80 border border-white/[0.08] text-xs font-mono text-[#A3B3A9] backdrop-blur-md">
+            <span className="text-[#D4AF37] font-bold">STAGE {activeStep + 1} OF 5</span>
+            <div className="flex items-center gap-1.5">
+              {[0, 1, 2, 3, 4].map((stepIdx) => (
+                <span
+                  key={stepIdx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    stepIdx === activeStep
+                      ? "w-6 bg-gradient-to-r from-[#10B981] to-[#D4AF37] shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+                      : stepIdx < activeStep
+                      ? "w-3 bg-[#10B981]"
+                      : "w-1.5 bg-white/20"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
-          <div className="hidden md:block absolute top-12 left-[10%] right-[10%] h-px step-connector z-0" />
+        {/* Vertical Timeline Flow */}
+        <div id="how-it-works-timeline" className="relative pt-6 pb-12">
+          {/* Desktop Central Vertical Spine */}
+          <div className="hidden lg:block absolute left-1/2 top-8 bottom-12 -translate-x-1/2 w-1 bg-white/[0.06] rounded-full overflow-hidden">
+            <div
+              className="w-full bg-gradient-to-b from-[#10B981] via-[#34D399] to-[#D4AF37] rounded-full transition-all duration-300 ease-out shadow-[0_0_16px_rgba(16,185,129,0.85)]"
+              style={{ height: `${timelineProgress}%` }}
+            />
+          </div>
 
-          {[
-            {
-              num: "01",
-              title: t("home.steps.step1.title", "Describe Product"),
-              desc: t("home.steps.step1.desc", "Input herbal ingredients, processing method, and intended category."),
-              icon: BookOpen,
-            },
-            {
-              num: "02",
-              title: t("home.steps.step2.title", "Classify Product"),
-              desc: t("home.steps.step2.desc", "Preliminary AI categorization under FSSAI, AYUSH, or Cosmetic rules."),
-              icon: Layers,
-            },
-            {
-              num: "03",
-              title: t("home.steps.step3.title", "Identify IP & Rules"),
-              desc: t("home.steps.step3.desc", "Evaluate Section 3(p) exclusions, trademarks, and statutory compliance."),
-              icon: Shield,
-            },
-            {
-              num: "04",
-              title: t("home.steps.step4.title", "Retrieve Evidence"),
-              desc: t("home.steps.step4.desc", "Source-cited RAG queries India Code, IP India, WIPO, and Nagoya databases."),
-              icon: FileText,
-            },
-            {
-              num: "05",
-              title: t("home.steps.step5.title", "Actionable Guidance"),
-              desc: t("home.steps.step5.desc", "Generate a sourced compliance checklist, evidence links, and AI confidence score."),
-              icon: CheckCircle2,
-            },
-          ].map((step, idx) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={idx}
-                className="relative z-10 p-5 rounded-2xl bg-[#0A100C] border border-[#D4AF37]/20 card-hover space-y-3 flex flex-col group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-extrabold text-[#D4AF37] font-mono">{step.num}</span>
-                  <div className="w-8 h-8 rounded-xl bg-[#0F1813] border border-[#087F5B]/40 flex items-center justify-center group-hover:bg-[#087F5B]/20 transition-colors">
-                    <Icon className="w-4 h-4 text-[#087F5B]" />
+          {/* Mobile/Tablet Left Vertical Spine */}
+          <div className="block lg:hidden absolute left-6 sm:left-8 top-8 bottom-12 -translate-x-1/2 w-1 bg-white/[0.06] rounded-full overflow-hidden">
+            <div
+              className="w-full bg-gradient-to-b from-[#10B981] via-[#34D399] to-[#D4AF37] rounded-full transition-all duration-300 ease-out shadow-[0_0_16px_rgba(16,185,129,0.85)]"
+              style={{ height: `${timelineProgress}%` }}
+            />
+          </div>
+
+          {/* Sequence of 5 Vertical Steps */}
+          <div className="space-y-12 sm:space-y-16 lg:space-y-24 relative">
+            {[
+              {
+                num: "01",
+                stage: "Stage 01",
+                title: t("home.steps.step1.title", "Describe Product"),
+                desc: t("home.steps.step1.desc", "Input herbal ingredients, processing method, and intended category."),
+                icon: BookOpen,
+                deliverable: "Standardized Formulation Profile",
+                tags: ["Herbal Ingredients", "Classical Shastras", "Dosage Matrix"],
+              },
+              {
+                num: "02",
+                stage: "Stage 02",
+                title: t("home.steps.step2.title", "Classify Product"),
+                desc: t("home.steps.step2.desc", "Preliminary AI categorization under FSSAI, AYUSH, or Cosmetic rules."),
+                icon: Layers,
+                deliverable: "Statutory Classification Dossier",
+                tags: ["FSSAI Food/Nutra", "AYUSH Schedule T", "Cosmetics Rules 2020"],
+              },
+              {
+                num: "03",
+                stage: "Stage 03",
+                title: t("home.steps.step3.title", "Identify IP & Rules"),
+                desc: t("home.steps.step3.desc", "Evaluate Section 3(p) exclusions, trademarks, and statutory compliance."),
+                icon: Shield,
+                deliverable: "IP Eligibility & Conflict Analysis",
+                tags: ["Section 3(p) Shield", "TKDL Search Exclusions", "TM Classes 05 & 30"],
+              },
+              {
+                num: "04",
+                stage: "Stage 04",
+                title: t("home.steps.step4.title", "Retrieve Evidence"),
+                desc: t("home.steps.step4.desc", "Source-cited RAG queries India Code, IP India, WIPO, and Nagoya databases."),
+                icon: FileText,
+                deliverable: "100% Sourced Statutory Citations",
+                tags: ["India Code Official Gazettes", "NBA / State Biodiversity Board", "WIPO Lex Cross-Ref"],
+              },
+              {
+                num: "05",
+                stage: "Stage 05",
+                title: t("home.steps.step5.title", "Actionable Guidance"),
+                desc: t("home.steps.step5.desc", "Generate a sourced compliance checklist, evidence links, and AI confidence score."),
+                icon: CheckCircle2,
+                deliverable: "Executive Regulatory Compliance Pack",
+                tags: ["Audit-Ready Checklist", "Confidence Metric", "Sourced Evidence Links"],
+              },
+            ].map((step, idx) => {
+              const Icon = step.icon;
+              const isActive = activeStep === idx;
+              const isPassed = activeStep > idx;
+              const isVisible = stepVisibility[idx];
+              const isEven = idx % 2 === 0;
+
+              return (
+                <div
+                  key={idx}
+                  data-step-index={idx}
+                  className="relative flex items-center"
+                >
+                  {/* Timeline Step Node Circle (Center on Desktop, Left on Mobile) */}
+                  <div className="absolute left-6 sm:left-8 lg:left-1/2 -translate-x-1/2 z-20">
+                    <div
+                      className={`w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center font-mono font-bold text-xs sm:text-sm transition-all duration-500 ${
+                        isActive
+                          ? "bg-gradient-to-br from-[#087F5B] to-[#040705] text-[#F3E5AB] border-2 border-[#D4AF37] scale-110 shadow-[0_0_28px_rgba(16,185,129,0.7)] ring-4 ring-[#10B981]/30"
+                          : isPassed
+                          ? "bg-[#087F5B] text-white border border-[#10B981] shadow-[0_0_15px_rgba(8,127,91,0.5)]"
+                          : "bg-[#090F0B] text-[#6C7D73] border border-white/[0.12] shadow-sm"
+                      }`}
+                    >
+                      {isPassed ? (
+                        <Check className="w-5 h-5 text-[#F3E5AB] stroke-[2.5]" />
+                      ) : (
+                        <span>{step.num}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Desktop Layout (Alternating Left/Right) & Mobile Layout (Right of Spine) */}
+                  <div className="w-full grid grid-cols-1 lg:grid-cols-2 lg:gap-20 items-center">
+                    {/* Left Column on Desktop */}
+                    <div
+                      className={`pl-14 sm:pl-20 lg:pl-0 ${
+                        isEven ? "lg:text-right" : "lg:order-2 lg:text-left"
+                      }`}
+                    >
+                      <div
+                        className={`group relative p-6 sm:p-7 rounded-3xl transition-all duration-700 ease-out border ${
+                          isActive
+                            ? "bg-[#090F0B]/95 border-[#D4AF37]/80 shadow-[0_15px_45px_rgba(8,127,91,0.3)] ring-1 ring-[#D4AF37]/40 scale-[1.01]"
+                            : "bg-[#090F0B]/75 border-white/[0.08] hover:border-[#10B981]/50 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+                        } ${
+                          isVisible
+                            ? "opacity-100 translate-y-0 scale-100"
+                            : "opacity-0 translate-y-10 scale-[0.97]"
+                        }`}
+                      >
+                        {/* Top Meta Bar */}
+                        <div
+                          className={`flex items-center gap-3 mb-3 ${
+                            isEven ? "lg:justify-end" : "lg:justify-start"
+                          }`}
+                        >
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-[#087F5B]/20 text-[#34D399] border border-[#087F5B]/40">
+                            {step.stage}
+                          </span>
+                          {isActive && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#D4AF37]/15 text-[#F3E5AB] border border-[#D4AF37]/40 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+                              ACTIVE STEP
+                            </span>
+                          )}
+                          {isPassed && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono text-[#10B981] bg-[#10B981]/10">
+                              <Check className="w-3 h-3" /> VERIFIED
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title & Icon Header */}
+                        <div
+                          className={`flex items-start gap-4 mb-3 ${
+                            isEven ? "lg:flex-row-reverse" : "flex-row"
+                          }`}
+                        >
+                          <div
+                            className={`w-11 h-11 rounded-2xl flex-shrink-0 flex items-center justify-center border transition-all duration-300 ${
+                              isActive
+                                ? "bg-[#087F5B]/30 border-[#D4AF37]/70 text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.35)]"
+                                : "bg-[#0D1611] border-[#087F5B]/30 text-[#10B981] group-hover:border-[#10B981]"
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base sm:text-lg font-extrabold text-[#F4F8F5] font-display group-hover:text-[#F3E5AB] transition-colors">
+                              {step.title}
+                            </h3>
+                            <span className="text-[11px] text-[#6C7D73] font-mono uppercase tracking-wider block">
+                              {step.deliverable}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-xs sm:text-sm text-[#A3B3A9] leading-relaxed mb-4">
+                          {step.desc}
+                        </p>
+
+                        {/* Feature Badges */}
+                        <div
+                          className={`flex flex-wrap gap-2 pt-2 border-t border-white/[0.06] ${
+                            isEven ? "lg:justify-end" : "lg:justify-start"
+                          }`}
+                        >
+                          {step.tags.map((tag, tagIdx) => (
+                            <span
+                              key={tagIdx}
+                              className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-medium bg-[#040705] border border-white/[0.08] text-[#A3B3A9] group-hover:border-[#087F5B]/50 transition-colors"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Bottom Gradient Accent Bar */}
+                        <div
+                          className={`h-0.5 rounded-full transition-all duration-500 mt-4 ${
+                            isActive
+                              ? "w-full bg-gradient-to-r from-[#10B981] via-[#34D399] to-[#D4AF37]"
+                              : "w-0 group-hover:w-full bg-gradient-to-r from-[#10B981] to-[#D4AF37]"
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Opposite Column on Desktop (Balanced Context Pill / Deliverable preview) */}
+                    <div
+                      className={`hidden lg:flex items-center ${
+                        isEven
+                          ? "justify-start pl-8"
+                          : "justify-end pr-8 lg:order-1"
+                      } ${
+                        isVisible
+                          ? "opacity-100 translate-y-0"
+                          : "opacity-0 translate-y-6"
+                      } transition-all duration-700 delay-150`}
+                    >
+                      <div className="p-4 rounded-2xl bg-[#090F0B]/50 border border-white/[0.05] backdrop-blur-sm max-w-xs space-y-1.5 text-left">
+                        <div className="flex items-center gap-2 text-[10px] uppercase font-mono tracking-wider text-[#D4AF37]">
+                          <Sparkles className="w-3 h-3 text-[#10B981]" />
+                          <span>Key Milestone</span>
+                        </div>
+                        <div className="text-xs font-bold text-[#F4F8F5] font-display">
+                          {step.deliverable}
+                        </div>
+                        <div className="text-[11px] text-[#6C7D73] leading-snug">
+                          {idx === 0 && "Validates herbal taxonomy and botanical classification against official pharmacopoeias."}
+                          {idx === 1 && "Maps multi-jurisdiction regulatory boundary rules across AYUSH, FSSAI, and Cosmetics."}
+                          {idx === 2 && "Screens Traditional Knowledge Digital Library (TKDL) and Section 3(p) statutory exclusions."}
+                          {idx === 3 && "Performs grounded neural search over gazette notifications, treaty texts, and treaties."}
+                          {idx === 4 && "Compiles actionable statutory compliance checklist with full evidence provenance."}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <h3 className="text-sm font-bold text-[#F4F8F5] font-sans">{step.title}</h3>
-                <p className="text-xs text-[#A8B5AC] leading-relaxed">{step.desc}</p>
-                <div className="h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-[#087F5B] to-[#D4AF37] transition-all duration-500 rounded-full mt-auto" />
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* ─── FEATURE CARDS ─── */}
-      <section className="relative z-10 bg-[#050806] max-w-7xl mx-auto px-4 sm:px-6 py-20 space-y-14">
+      {/* ─── FEATURE CARDS / BENTO GRID (ORIGINAL DESIGN MAINTAINED) ─── */}
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-24 space-y-16">
         <div className="text-center space-y-3">
-          <span className="text-xs font-mono uppercase tracking-widest text-[#D4AF37] font-semibold">
-            {t("home.features.tag", "Core Capabilities")}
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#F4F8F5] tracking-tight font-sans">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#080D0A] border border-[#D4AF37]/30 text-[#F3E5AB] text-xs font-mono uppercase tracking-widest font-semibold">
+            <Scale className="w-3.5 h-3.5 text-[#10B981]" />
+            <span>{t("home.features.tag", "Core Capabilities")}</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#F4F8F5] tracking-tight font-display">
             {t("home.features.title", "What AYUSHYA Can Help With")}
           </h2>
-          <p className="text-sm text-[#A8B5AC] max-w-xl mx-auto">
+          <p className="text-sm text-[#A3B3A9] max-w-xl mx-auto">
             {t("home.features.subtitle", "Comprehensive legal and regulatory coverage tailored to Ayurvedic innovations.")}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             {
               icon: Layers,
@@ -227,7 +559,7 @@ export default function Home() {
                 "home.features.feat1.desc",
                 "Classifies products into Classical Medicines, Proprietary ASU Medicines, Ayurveda-Aahar, Phytopharmaceuticals, or Ayurvedic Cosmetics."
               ),
-              accent: "#087F5B",
+              accent: "#10B981",
             },
             {
               icon: Shield,
@@ -245,7 +577,7 @@ export default function Home() {
                 "home.features.feat3.desc",
                 "Identifies FSSAI Ayurveda-Aahar licensing, Rule 158B Drugs & Cosmetics compliance, heavy metal monographs, and packaging rules."
               ),
-              accent: "#087F5B",
+              accent: "#10B981",
             },
             {
               icon: Leaf,
@@ -263,7 +595,7 @@ export default function Home() {
                 "home.features.feat5.desc",
                 "Explicit jurisdiction toggles for India, US FDA, EU regulations, and WIPO frameworks — never silently mixing legal systems."
               ),
-              accent: "#087F5B",
+              accent: "#10B981",
             },
             {
               icon: Bot,
@@ -279,31 +611,32 @@ export default function Home() {
             return (
               <div
                 key={idx}
-                className="p-6 rounded-2xl bg-[#0A100C] border border-[#D4AF37]/20 card-hover space-y-4 flex flex-col group relative overflow-hidden"
+                className="p-7 rounded-3xl bg-[#090F0B] border border-[rgba(212,175,55,0.18)] card-hover space-y-4 flex flex-col group relative overflow-hidden shadow-xl"
               >
                 <div
-                  className="absolute -top-16 -right-16 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl pointer-events-none"
-                  style={{ background: `radial-gradient(circle, ${feat.accent}40, transparent 70%)` }}
+                  className="absolute -top-16 -right-16 w-36 h-36 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-3xl pointer-events-none"
+                  style={{ background: `radial-gradient(circle, ${feat.accent}35, transparent 70%)` }}
                 />
-                <div className="space-y-3 relative z-10">
+
+                <div className="space-y-4 relative z-10">
                   <div
-                    className="w-11 h-11 rounded-xl border flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg"
+                    className="w-12 h-12 rounded-2xl border flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md"
                     style={{
-                      background: `${feat.accent}18`,
-                      borderColor: `${feat.accent}50`,
-                      boxShadow: `0 0 20px ${feat.accent}20`,
+                      background: `${feat.accent}15`,
+                      borderColor: `${feat.accent}40`,
                     }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: feat.accent }} />
+                    <Icon className="w-6 h-6" style={{ color: feat.accent }} />
                   </div>
-                  <h3 className="text-base font-bold text-[#F4F8F5] group-hover:text-[#D4AF37] transition-colors">
+                  <h3 className="text-lg font-bold text-[#F4F8F5] group-hover:text-[#F3E5AB] transition-colors font-display">
                     {feat.title}
                   </h3>
-                  <p className="text-xs text-[#A8B5AC] leading-relaxed">{feat.desc}</p>
+                  <p className="text-xs text-[#A3B3A9] leading-relaxed">{feat.desc}</p>
                 </div>
-                <div className="relative z-10 mt-auto pt-3 border-t border-[#D4AF37]/10">
-                  <span className="text-xs text-[#087F5B] font-mono group-hover:text-[#0CA678] transition-colors flex items-center gap-1">
-                    Learn more <ArrowRight className="w-3 h-3" />
+
+                <div className="relative z-10 mt-auto pt-4 border-t border-[rgba(212,175,55,0.1)]">
+                  <span className="text-xs text-[#10B981] font-mono group-hover:text-[#34D399] transition-colors flex items-center gap-1.5 font-semibold">
+                    Explore Capability <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </div>
               </div>
@@ -312,88 +645,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── TRUST / TESTIMONIALS ─── */}
-      <section className="relative z-10 bg-[#050806] max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="rounded-3xl border border-[#D4AF37]/20 bg-[#0A100C]/80 backdrop-blur-sm p-8 sm:p-12 space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#D4AF37]">
-              {t("home.trust.tag", "Trusted By Innovators")}
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#F4F8F5]">
-              {t("home.trust.title", "Built on Statutory Accuracy")}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: t("home.trust.q1", "AYUSHYA identified a Section 3(p) exclusion we missed entirely. It saved our patent filing strategy."),
-                author: "Ayurvedic Startup Founder",
-              },
-              {
-                quote: t("home.trust.q2", "The FSSAI classification guidance with actual rule citations was incredibly precise and actionable."),
-                author: "R&D Head, Herbal Brand",
-              },
-              {
-                quote: t("home.trust.q3", "Multi-jurisdiction toggles helped us understand India vs EU regulatory gaps instantly."),
-                author: "IP Attorney, New Delhi",
-              },
-            ].map((item, i) => (
-              <div key={i} className="p-5 rounded-2xl bg-[#050806]/70 border border-[#D4AF37]/15 space-y-3">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, s) => (
-                    <Star key={s} className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
-                  ))}
-                </div>
-                <p className="text-sm text-[#C8D5CC] leading-relaxed italic">&ldquo;{item.quote}&rdquo;</p>
-                <p className="text-xs text-[#718078] font-mono">— {item.author}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ─── CALL TO ACTION ─── */}
-      <section className="relative z-10 bg-[#050806] max-w-5xl mx-auto px-4 sm:px-6 py-12 pb-24">
-        <div className="relative p-8 sm:p-14 rounded-3xl border border-[#D4AF37]/30 text-center space-y-6 overflow-hidden">
-          <div className="absolute inset-0 hero-bg opacity-15 rounded-3xl" aria-hidden="true" />
-          <div
-            className="absolute inset-0 rounded-3xl"
-            style={{
-              background: "linear-gradient(135deg, rgba(5,8,6,0.95) 0%, rgba(8,127,91,0.12) 50%, rgba(5,8,6,0.95) 100%)",
-            }}
-          />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[#087F5B]/20 blur-3xl pointer-events-none" />
+      {/* ─── CALL TO ACTION BANNER (ORIGINAL DESIGN MAINTAINED) ─── */}
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-12 pb-28">
+        <div className="relative p-10 sm:p-16 rounded-3xl border border-[#D4AF37]/35 text-center space-y-8 overflow-hidden shadow-2xl bg-gradient-to-br from-[#090F0B] via-[#0D1812] to-[#040705]">
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#087F5B]/25 blur-[100px] pointer-events-none" />
+          <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+
           <div className="relative z-10 space-y-3">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F4F8F5] tracking-tight font-sans">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#F4F8F5] tracking-tight font-display">
               {t("home.cta.title", "Ready to Analyze Your Ayurvedic Formulation?")}
             </h2>
-            <p className="text-sm text-[#A8B5AC] max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-[#A3B3A9] max-w-xl mx-auto leading-relaxed">
               {t(
                 "home.cta.subtitle",
                 "Get an instant evidence-backed analysis report with preliminary classification, IP options, and regulatory checklist."
               )}
             </p>
           </div>
-          <div className="relative z-10 flex flex-wrap justify-center gap-4">
+
+          <div className="relative z-10 flex flex-wrap justify-center gap-4 pt-2">
             <Link
               href="/analyze"
               id="cta-analyze-btn"
-              className="btn-primary-glow px-10 py-4 rounded-full text-sm font-bold text-white shadow-xl inline-flex items-center gap-2"
+              className="btn-primary-glow px-10 py-4 rounded-full text-sm font-bold text-white shadow-2xl inline-flex items-center gap-2.5 group tracking-wider"
             >
-              {t("home.cta.analyzeNow", "Analyze Product Now")}
-              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+              <span>{t("home.cta.analyzeNow", "Analyze Product Now")}</span>
+              <ArrowRight className="w-4 h-4 text-[#F3E5AB] group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/assistant"
               id="cta-assistant-btn"
-              className="btn-gold-outline px-10 py-4 rounded-full text-sm font-semibold transition-colors inline-flex items-center gap-2"
+              className="btn-gold-outline px-10 py-4 rounded-full text-sm font-semibold transition-all inline-flex items-center gap-2.5 group"
             >
-              <Bot className="w-4 h-4 text-[#087F5B]" />
-              {t("home.cta.askAssistant", "Ask AI Assistant")}
+              <Bot className="w-4 h-4 text-[#10B981] group-hover:scale-110 transition-transform" />
+              <span>{t("home.cta.askAssistant", "Ask AI Assistant")}</span>
             </Link>
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

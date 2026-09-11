@@ -20,6 +20,8 @@ import {
   Filter,
   CheckCircle2,
   Clock,
+  Sparkles,
+  Scale,
   HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -84,19 +86,25 @@ export default function AnalysisResultsDashboard() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6 relative pb-32">
-      {/* Dashboard Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0A100C] border border-[#D4AF37]/30 shadow-[0_0_40px_rgba(0,0,0,0.8)] backdrop-blur-xl space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-8 relative pb-36">
+      {/* Background ambient light */}
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#087F5B]/10 blur-[130px] pointer-events-none -z-10" />
+
+      {/* Dashboard Header Container */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#080D0A]/90 border border-[rgba(212,175,55,0.22)] shadow-2xl backdrop-blur-2xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-mono text-[#D4AF37]">
-              <span>{t("dashboard.idLabel", "Analysis ID:")} #{analysisData?.id || rawId}</span>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono text-[#D4AF37]">
+              <span className="bg-[#0D1611] px-2.5 py-1 rounded-full border border-[#D4AF37]/30">
+                {t("dashboard.idLabel", "Analysis ID:")} #{analysisData?.id || rawId}
+              </span>
               <span>•</span>
-              <span className="flex items-center gap-1 bg-[#050806] px-2 py-0.5 rounded border border-[#D4AF37]/30">
-                <Globe className="w-3.5 h-3.5 text-[#087F5B]" /> {jurisdiction} {t("dashboard.jurisdictionSuffix", "Jurisdiction")}
+              <span className="flex items-center gap-1.5 bg-[#0D1611] px-2.5 py-1 rounded-full border border-[#D4AF37]/30 text-[#F4F8F5]">
+                <Globe className="w-3.5 h-3.5 text-[#10B981]" />
+                <span>{jurisdiction} {t("dashboard.jurisdictionSuffix", "Jurisdiction")}</span>
               </span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#F4F8F5] tracking-tight font-sans">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#F4F8F5] tracking-tight font-display">
               {productName}
             </h1>
             <p className="text-xs text-[#A8B5AC] font-mono">
@@ -104,14 +112,14 @@ export default function AnalysisResultsDashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="px-3.5 py-1.5 rounded-full bg-[#0F1813] border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-bold font-mono">
-              Evidence Level:{" "}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="px-3.5 py-1.5 rounded-full bg-[#0D1611] border border-[#D4AF37]/30 text-xs font-bold font-mono text-[#D4AF37]">
+              {t("dashboard.evidenceLevel", "Evidence Level:")}{" "}
               <strong className={evidenceStrength === "strong" ? "text-emerald-400" : evidenceStrength === "moderate" ? "text-yellow-400" : "text-amber-500"}>
                 {evidenceStrength.toUpperCase()}
               </strong>
             </div>
-            <div className="px-3.5 py-1.5 rounded-full bg-[#0F1813] text-[#A8B5AC] text-xs font-bold font-mono border border-[#D4AF37]/40">
+            <div className="px-3.5 py-1.5 rounded-full bg-[#0D1611] text-[#A3B3A9] text-xs font-bold font-mono border border-[#D4AF37]/30">
               Citations: <strong className="text-[#D4AF37]">{rawEvidence.length} Grounded</strong>
             </div>
           </div>
@@ -131,7 +139,7 @@ export default function AnalysisResultsDashboard() {
               <div className="pt-2">
                 <Link
                   href="/help"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087F5B] text-white font-bold text-xs hover:scale-105 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#087F5B] text-white font-bold text-xs hover:scale-105 transition-all shadow-sm"
                 >
                   <HelpCircle className="w-3.5 h-3.5" /> Request Human / Professional Review
                 </Link>
@@ -140,20 +148,20 @@ export default function AnalysisResultsDashboard() {
           </div>
         ) : (
           <div className="p-4 rounded-2xl bg-[#087F5B]/10 border border-[#D4AF37]/30 flex items-start gap-3 text-xs text-[#D4AF37]">
-            <CheckCircle2 className="w-5 h-5 text-[#087F5B] shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-[#10B981] shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-bold uppercase tracking-wider font-mono">
+              <p className="font-bold uppercase tracking-wider font-mono text-[#F3E5AB]">
                 AI Evidence-Grounded Legal Intelligence
               </p>
-              <p className="text-[#A8B5AC] font-sans">
+              <p className="text-[#A3B3A9] font-sans leading-relaxed">
                 The analysis below is grounded strictly in retrieved statutory provisions from Indian & International legal frameworks. This is decision-support intelligence, not a binding legal opinion.
               </p>
             </div>
           </div>
         )}
 
-        {/* Dynamic Tab Bar */}
-        <div className="flex items-center gap-1 border-b border-[#D4AF37]/20 pt-2 overflow-x-auto scrollbar-none">
+        {/* Dynamic Modern Tab Bar */}
+        <div className="flex items-center gap-1.5 border-b border-[rgba(212,175,55,0.18)] pt-2 overflow-x-auto scrollbar-none">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -161,13 +169,13 @@ export default function AnalysisResultsDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-3 text-xs font-bold rounded-t-xl transition-all border-b-2 whitespace-nowrap font-sans cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-3 text-xs font-bold rounded-t-xl transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? "border-[#D4AF37] bg-[#087F5B] text-white shadow-[0_0_15px_rgba(8,127,91,0.3)]"
-                    : "border-transparent text-[#A8B5AC] hover:text-[#F4F8F5] hover:bg-white/5"
+                    ? "border-[#D4AF37] bg-gradient-to-r from-[#087F5B] to-[#059669] text-white shadow-[0_2px_15px_rgba(8,127,91,0.4)]"
+                    : "border-transparent text-[#A3B3A9] hover:text-[#F4F8F5] hover:bg-white/[0.04]"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-[#D4AF37]" : "text-[#718078]"}`} />
+                <Icon className={`w-4 h-4 ${isActive ? "text-[#F3E5AB]" : "text-[#6C7D73]"}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -176,64 +184,65 @@ export default function AnalysisResultsDashboard() {
       </div>
 
       {/* Tab Panels */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0A100C]/90 border border-[#D4AF37]/20 shadow-2xl backdrop-blur-xl">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#080D0A]/90 border border-[rgba(212,175,55,0.2)] shadow-2xl backdrop-blur-2xl">
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
           <div className="space-y-8 animate-fade-slide-in-1">
             {/* Top Stat Cards */}
             <div className="grid md:grid-cols-3 gap-6">
               {/* Card 1: Product Classification */}
-              <div className="p-6 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-3">
-                <span className="text-[11px] font-bold text-[#D4AF37] uppercase font-mono tracking-wider">
+              <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-sm">
+                <span className="text-[11px] font-bold text-[#F3E5AB] uppercase font-mono tracking-wider">
                   {t("dashboard.overview.classification", "Product Classification")}
                 </span>
-                <p className="text-xl font-bold text-[#F4F8F5]">{category}</p>
-                <p className="text-xs text-[#A8B5AC]">Target regulatory framework: FSSAI / AYUSH Guidelines</p>
+                <p className="text-xl font-bold text-[#F4F8F5] font-display">{category}</p>
+                <p className="text-xs text-[#A3B3A9]">Target regulatory framework: FSSAI / AYUSH Guidelines</p>
               </div>
 
               {/* Card 2: Real Evidence Level */}
-              <div className="p-6 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-3">
+              <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-3 shadow-sm">
                 <div className="flex items-center justify-between text-[11px] font-bold font-mono">
-                  <span className="text-[#D4AF37] uppercase tracking-wider">Evidence Strength</span>
+                  <span className="text-[#F3E5AB] uppercase tracking-wider">Evidence Strength</span>
                   <span className="text-[#D4AF37] uppercase">{evidenceStrength}</span>
                 </div>
-                <div className="w-full bg-[#0F1813] h-3 rounded-full overflow-hidden border border-[#D4AF37]/20">
+                <div className="w-full bg-[#0D1611] h-2.5 rounded-full overflow-hidden border border-[#D4AF37]/20">
                   <div
-                    className={`h-full rounded-full ${
+                    className={`h-full rounded-full transition-all duration-500 ${
                       evidenceStrength === "strong"
-                        ? "w-full bg-[#087F5B]"
+                        ? "w-full bg-gradient-to-r from-[#087F5B] to-[#10B981]"
                         : evidenceStrength === "moderate"
                         ? "w-2/3 bg-[#D4AF37]"
                         : "w-1/3 bg-amber-600"
                     }`}
                   />
                 </div>
-                <p className="text-xs text-[#A8B5AC] font-mono">
+                <p className="text-xs text-[#A3B3A9] font-mono">
                   {rawEvidence.length} authoritative chunk(s) evaluated
                 </p>
               </div>
 
               {/* Card 3: Key Legal Status */}
-              <div className="p-6 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-3">
-                <span className="text-[11px] font-bold text-[#D4AF37] uppercase font-mono tracking-wider">
+              <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-sm">
+                <span className="text-[11px] font-bold text-[#F3E5AB] uppercase font-mono tracking-wider">
                   Review Recommendation
                 </span>
-                <p className="text-lg font-bold text-[#D4AF37]">
+                <p className="text-lg font-bold text-[#D4AF37] font-display">
                   {requiresHumanReview ? "Professional Review Recommended" : "Standard Legal Intelligence"}
                 </p>
-                <p className="text-xs text-[#A8B5AC]">
+                <p className="text-xs text-[#A3B3A9]">
                   Based on Section 3(p) TK & Biodiversity provisions
                 </p>
               </div>
             </div>
 
             {/* Grounded Legal Intelligence Summary */}
-            <div className="p-6 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-3">
+            <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-3 shadow-md">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider font-mono">
-                  Executive Statutory & Intelligence Summary
+                <h3 className="text-xs font-bold text-[#F3E5AB] uppercase tracking-wider font-mono flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-[#10B981]" />
+                  <span>Executive Statutory & Intelligence Summary</span>
                 </h3>
-                <span className="text-[10px] text-[#A8B5AC] font-mono border border-[#D4AF37]/30 px-2 py-0.5 rounded">
+                <span className="text-[10px] text-[#A3B3A9] font-mono border border-[#D4AF37]/30 px-2.5 py-0.5 rounded-full bg-[#0D1611]">
                   Grounded AI Intelligence
                 </span>
               </div>
@@ -241,11 +250,11 @@ export default function AnalysisResultsDashboard() {
                 {groundedAnswer ? (
                   groundedAnswer
                 ) : abstained ? (
-                  <p className="text-[#A8B5AC] italic">
+                  <p className="text-[#A3B3A9] italic">
                     AYUSHYA abstained from generating a legal conclusion because retrieved evidence is insufficient for binding claims. Please consult the &ldquo;Sources &amp; Citations&rdquo; tab or request human review.
                   </p>
                 ) : (
-                  <p className="text-[#A8B5AC]">
+                  <p className="text-[#A3B3A9]">
                     For <strong>{productName}</strong> evaluated under <strong>{jurisdiction}</strong> jurisdiction, classical herbs documented in Ayurvedic texts are categorized under Traditional Knowledge safeguards. Patenting requires proving synergistic bio-enhancement beyond mere admixture (Section 3e/3p). Commercialization must comply with statutory FSSAI and AYUSH licensing guidelines.
                   </p>
                 )}
@@ -258,32 +267,32 @@ export default function AnalysisResultsDashboard() {
         {activeTab === "ip" && (
           <div className="space-y-6 animate-fade-slide-in-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-[#F4F8F5]">Intellectual Property Protection Assessment</h3>
-              <span className="text-xs font-mono text-[#D4AF37] bg-[#0F1813] px-2.5 py-1 rounded-full border border-[#D4AF37]/30">
+              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Intellectual Property Protection Assessment</h3>
+              <span className="text-xs font-mono text-[#D4AF37] bg-[#0D1611] px-3 py-1 rounded-full border border-[#D4AF37]/35">
                 Statutory Intelligence
               </span>
             </div>
             <div className="grid gap-4">
-              <div className="p-5 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[#D4AF37]">Patent Act, 1970 — Section 3(p) & 3(e) Exclusions</span>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#0F1813] text-[#D4AF37] border border-[#D4AF37]/40">
+              <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-bold text-sm text-[#F3E5AB]">Patent Act, 1970 — Section 3(p) & 3(e) Exclusions</span>
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#0D1611] text-[#D4AF37] border border-[#D4AF37]/40 font-mono">
                     Statutory Bar Check
                   </span>
                 </div>
-                <p className="text-xs text-[#A8B5AC] leading-relaxed">
+                <p className="text-xs text-[#A3B3A9] leading-relaxed">
                   Inventions which in effect are traditional knowledge or an aggregation or duplication of known properties of traditionally known component(s) are non-patentable under Section 3(p). Novel extraction processes or demonstrated synergistic formulations may be eligible subject to examination.
                 </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-[#D4AF37]">Trademark & Brand Identity (Trade Marks Act, 1999)</span>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#0F1813] text-[#D4AF37] border border-[#D4AF37]/40">
+              <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-bold text-sm text-[#F3E5AB]">Trademark & Brand Identity (Trade Marks Act, 1999)</span>
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#0D1611] text-[#D4AF37] border border-[#D4AF37]/40 font-mono">
                     Brand Protection
                   </span>
                 </div>
-                <p className="text-xs text-[#A8B5AC]">
+                <p className="text-xs text-[#A3B3A9] leading-relaxed">
                   Distinctive brand names for &ldquo;{productName}&rdquo; can be registered under Class 5 (Pharmaceuticals/ASU) or Class 30/29 (Ayurveda Aahar/Dietary). Generic botanical names are unregistrable as descriptive marks.
                 </p>
               </div>
@@ -294,17 +303,17 @@ export default function AnalysisResultsDashboard() {
         {/* REGULATIONS TAB */}
         {activeTab === "regulations" && (
           <div className="space-y-6 animate-fade-slide-in-1">
-            <h3 className="text-lg font-bold text-[#F4F8F5]">Applicable Regulatory Frameworks</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-2">
-                <h4 className="font-bold text-sm text-[#D4AF37]">FSSAI — Ayurveda Aahar Regulations 2022</h4>
-                <p className="text-xs text-[#A8B5AC]">
+            <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Applicable Regulatory Frameworks</h3>
+            <div className="grid md:grid-cols-2 gap-5">
+              <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
+                <h4 className="font-bold text-sm text-[#F3E5AB]">FSSAI — Ayurveda Aahar Regulations 2022</h4>
+                <p className="text-xs text-[#A3B3A9] leading-relaxed">
                   Applies if marketed as food/dietary supplement prepared according to authoritative Ayurvedic texts listed in Schedule A of FSSAI regulations.
                 </p>
               </div>
-              <div className="p-5 rounded-2xl bg-[#050806] border border-[#D4AF37]/20 space-y-2">
-                <h4 className="font-bold text-sm text-[#D4AF37]">Drugs & Cosmetics Rules 1945 — Rule 158B</h4>
-                <p className="text-xs text-[#A8B5AC]">
+              <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
+                <h4 className="font-bold text-sm text-[#F3E5AB]">Drugs & Cosmetics Rules 1945 — Rule 158B</h4>
+                <p className="text-xs text-[#A3B3A9] leading-relaxed">
                   Manufacturing license required from State AYUSH Licensing Authority if marketed with medicinal/therapeutic claims.
                 </p>
               </div>
@@ -316,27 +325,27 @@ export default function AnalysisResultsDashboard() {
         {activeTab === "compliance" && (
           <div className="space-y-6 animate-fade-slide-in-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-bold text-[#F4F8F5]">Regulatory Compliance Checklist</h3>
-              <span className="text-xs font-mono text-[#D4AF37] bg-[#0F1813] px-2.5 py-1 rounded-full border border-[#D4AF37]/30">
+              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Regulatory Compliance Checklist</h3>
+              <span className="text-xs font-mono text-[#D4AF37] bg-[#0D1611] px-3 py-1 rounded-full border border-[#D4AF37]/30">
                 Decision Support Checklist
               </span>
             </div>
             <div className="space-y-3">
               {[
-                { title: `FSSAI / State AYUSH License for ${productName}`, status: "Statutory Requirement", icon: Clock, color: "text-[#D4AF37] bg-[#050806]" },
-                { title: "Ayurveda Aahar Official Logo & Mandatory Packaging Declaration", status: "Mandatory for Food", icon: Clock, color: "text-[#D4AF37] bg-[#050806]" },
-                { title: "National Biodiversity Authority (NBA) Form I / ABS Clearance", status: "Biological Resource Check", icon: AlertTriangle, color: "text-[#D4AF37] bg-[#050806]" },
-                { title: "TKDL Prior Art Verification (Patent Applications)", status: "Exclusion Defense", icon: Clock, color: "text-[#D4AF37] bg-[#050806]" },
-                { title: "Pharmacopoeial Monograph Standards (API Compliance)", status: "Quality Benchmark", icon: Clock, color: "text-[#A8B5AC] bg-[#050806]" },
+                { title: `FSSAI / State AYUSH License for ${productName}`, status: "Statutory Requirement", icon: Clock, color: "text-[#D4AF37]" },
+                { title: "Ayurveda Aahar Official Logo & Mandatory Packaging Declaration", status: "Mandatory for Food", icon: Clock, color: "text-[#D4AF37]" },
+                { title: "National Biodiversity Authority (NBA) Form I / ABS Clearance", status: "Biological Resource Check", icon: AlertTriangle, color: "text-[#D4AF37]" },
+                { title: "TKDL Prior Art Verification (Patent Applications)", status: "Exclusion Defense", icon: Clock, color: "text-[#D4AF37]" },
+                { title: "Pharmacopoeial Monograph Standards (API Compliance)", status: "Quality Benchmark", icon: Clock, color: "text-[#A3B3A9]" },
               ].map((item, i) => {
                 const Icon = item.icon;
                 return (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-[#050806] border border-[#D4AF37]/20 text-xs">
+                  <div key={i} className="flex flex-wrap items-center justify-between p-4 rounded-xl bg-[#040705] border border-[rgba(212,175,55,0.18)] hover:border-[#D4AF37]/40 text-xs transition-colors shadow-sm">
                     <div className="flex items-center gap-3">
                       <Icon className={`w-4 h-4 ${item.color}`} />
                       <span className="text-[#F4F8F5] font-medium">{item.title}</span>
                     </div>
-                    <span className={`px-3 py-1 rounded-full font-bold text-[11px] border border-[#D4AF37]/30 ${item.color}`}>
+                    <span className={`px-3 py-1 rounded-full font-bold text-[11px] border border-[#D4AF37]/30 bg-[#0D1611] ${item.color}`}>
                       {item.status}
                     </span>
                   </div>
@@ -349,10 +358,12 @@ export default function AnalysisResultsDashboard() {
         {/* BIODIVERSITY TAB */}
         {activeTab === "biodiversity" && (
           <div className="space-y-6 animate-fade-slide-in-1">
-            <h3 className="text-lg font-bold text-[#F4F8F5]">Biodiversity & Traditional Knowledge (TK) Analysis</h3>
-            <p className="text-xs text-[#A8B5AC] leading-relaxed">
-              Under the Biological Diversity Act, 2002 (and 2024 Rules), utilizing Indian biological resources for commercial utilization or applying for IP rights based on research on biological resources requires obtaining prior approval from the National Biodiversity Authority (NBA) and compliance with Access and Benefit Sharing (ABS) mechanisms.
-            </p>
+            <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Biodiversity & Traditional Knowledge (TK) Analysis</h3>
+            <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-3 shadow-md">
+              <p className="text-xs text-[#A3B3A9] leading-relaxed">
+                Under the Biological Diversity Act, 2002 (and 2024 Rules), utilizing Indian biological resources for commercial utilization or applying for IP rights based on research on biological resources requires obtaining prior approval from the National Biodiversity Authority (NBA) and compliance with Access and Benefit Sharing (ABS) mechanisms.
+              </p>
+            </div>
           </div>
         )}
 
@@ -360,18 +371,18 @@ export default function AnalysisResultsDashboard() {
         {activeTab === "sources" && (
           <div className="space-y-6 animate-fade-slide-in-1">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <h3 className="text-lg font-bold text-[#F4F8F5]">
+              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">
                 Retrieved Statutory Evidence ({rawEvidence.length} Citations)
               </h3>
 
-              <div className="flex items-center gap-3 text-xs">
-                <div className="flex items-center gap-1 text-[#A8B5AC]">
-                  <Filter className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <div className="flex items-center gap-1.5 text-[#A3B3A9]">
+                  <Filter className="w-3.5 h-3.5 text-[#10B981]" />
                   <span>Domain:</span>
                   <select
                     value={sourceTypeFilter}
                     onChange={(e) => setSourceTypeFilter(e.target.value)}
-                    className="bg-[#050806] text-[#F4F8F5] border border-[#D4AF37]/30 rounded-lg px-2 py-1 cursor-pointer font-sans"
+                    className="bg-[#040705] text-[#F4F8F5] border border-[rgba(212,175,55,0.25)] rounded-lg px-2.5 py-1 cursor-pointer font-sans"
                   >
                     <option value="All">All Domains</option>
                     <option value="patents">Patents</option>
@@ -382,12 +393,12 @@ export default function AnalysisResultsDashboard() {
                   </select>
                 </div>
 
-                <div className="flex items-center gap-1 text-[#A8B5AC]">
+                <div className="flex items-center gap-1.5 text-[#A3B3A9]">
                   <span>Jurisdiction:</span>
                   <select
                     value={sourceJurisdictionFilter}
                     onChange={(e) => setSourceJurisdictionFilter(e.target.value)}
-                    className="bg-[#050806] text-[#F4F8F5] border border-[#D4AF37]/30 rounded-lg px-2 py-1 cursor-pointer font-sans"
+                    className="bg-[#040705] text-[#F4F8F5] border border-[rgba(212,175,55,0.25)] rounded-lg px-2.5 py-1 cursor-pointer font-sans"
                   >
                     <option value="All">All Jurisdictions</option>
                     <option value="india">India</option>
@@ -398,7 +409,7 @@ export default function AnalysisResultsDashboard() {
             </div>
 
             {filteredSources.length === 0 ? (
-              <div className="p-8 text-center text-xs text-[#A8B5AC] bg-[#050806] rounded-2xl border border-[#D4AF37]/20">
+              <div className="p-8 text-center text-xs text-[#A3B3A9] bg-[#040705] rounded-2xl border border-[rgba(212,175,55,0.2)]">
                 No statutory evidence chunks match the current filter.
               </div>
             ) : (
@@ -416,11 +427,11 @@ export default function AnalysisResultsDashboard() {
                   return (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl bg-[#050806] border border-[#D4AF37]/20 hover:border-[#087F5B] text-xs transition-colors space-y-2"
+                      className="p-5 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.18)] hover:border-[#10B981] text-xs transition-colors space-y-3 shadow-md group"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-[#F4F8F5] text-sm font-sans">{cit.title}</p>
+                          <p className="font-bold text-[#F4F8F5] text-sm font-sans group-hover:text-[#F3E5AB] transition-colors">{cit.title}</p>
                           <p className="text-[11px] text-[#D4AF37] font-mono mt-0.5">
                             {secStr || "Statutory Provision"} • Jurisdiction: {cit.jurisdiction} • Authority: {cit.authority || "Official Authority"}
                           </p>
@@ -430,16 +441,16 @@ export default function AnalysisResultsDashboard() {
                             href={cit.source_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#A8B5AC] hover:text-[#D4AF37] p-1"
+                            className="text-[#6C7D73] group-hover:text-[#10B981] group-hover:translate-x-0.5 transition-all p-1"
                             title="View Official Source"
                           >
-                            <ExternalLink className="w-4 h-4 text-[#D4AF37]" />
+                            <ExternalLink className="w-4 h-4" />
                           </a>
                         )}
                       </div>
 
                       {ev.text && (
-                        <div className="p-3 rounded-lg bg-[#0A100C] border border-[#D4AF37]/10 text-xs text-[#A8B5AC] font-mono leading-relaxed">
+                        <div className="p-3.5 rounded-xl bg-[#090F0B] border border-white/[0.06] text-xs text-[#A3B3A9] font-mono leading-relaxed">
                           {ev.text.length > 300 ? `${ev.text.substring(0, 300)}...` : ev.text}
                         </div>
                       )}
@@ -453,13 +464,13 @@ export default function AnalysisResultsDashboard() {
       </div>
 
       {/* Floating Ask AYUSHYA Button on Bottom-Right */}
-      <div className="fixed bottom-5 right-5 z-40">
+      <div className="fixed bottom-6 right-6 z-40">
         {!isChatOpen ? (
           <button
             onClick={() => setIsChatOpen(true)}
-            className="btn-primary-glow flex items-center gap-2.5 px-5 py-3 rounded-full text-white font-bold text-sm shadow-2xl transition-all border border-[#D4AF37]/40 group cursor-pointer"
+            className="btn-primary-glow flex items-center gap-2.5 px-5 py-3 rounded-full text-white font-bold text-sm shadow-2xl transition-all border border-[#D4AF37]/45 group cursor-pointer"
           >
-            <Bot className="w-5 h-5 text-[#D4AF37] group-hover:rotate-12 transition-transform" />
+            <Bot className="w-5 h-5 text-[#F3E5AB] group-hover:rotate-12 transition-transform" />
             <span>🤖 {t("chat.openBtn", "Ask AYUSHYA")}</span>
           </button>
         ) : (
