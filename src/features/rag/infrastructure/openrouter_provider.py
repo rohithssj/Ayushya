@@ -126,7 +126,11 @@ class OpenRouterProvider:
         user_prompt: str,
         max_tokens: int = DEFAULT_MAX_TOKENS,
         temperature: float = DEFAULT_TEMPERATURE,
+        response_format: Optional[Dict[str, Any]] = None,
+        timeout_override: Optional[int] = None,
+        timeout_seconds: Optional[int] = None,
     ) -> str:
+        effective_timeout = timeout_seconds if timeout_seconds is not None else timeout_override
         """
         Call OpenRouter chat completions with model fallback routing.
 
@@ -142,6 +146,13 @@ class OpenRouterProvider:
 
         last_exception: Optional[Exception] = None
 
+        # Per-call timeout override (e.g. Product Analysis needs 45s, Chat uses 15s)
+        effective_timeout = (
+            timeout_seconds
+            if timeout_seconds is not None
+            else (timeout_override if timeout_override is not None else self._timeout)
+        )
+
         for idx, current_model in enumerate(models_to_try):
             # Models array passed to OpenRouter starting from the current model
             remaining_models = models_to_try[idx:]
@@ -156,6 +167,8 @@ class OpenRouterProvider:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
+            if response_format:
+                payload["response_format"] = response_format
 
             body = json.dumps(payload).encode("utf-8")
             headers = {
@@ -174,7 +187,7 @@ class OpenRouterProvider:
 
             try:
                 logger.info(f"OpenRouter attempt with model: {current_model} (fallbacks: {remaining_models[1:]})")
-                with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                with urllib.request.urlopen(req, timeout=effective_timeout) as resp:
                     raw = resp.read().decode("utf-8")
 
                 # Parse JSON response
@@ -191,6 +204,12 @@ class OpenRouterProvider:
                         err_msg = str(err_obj.get("message", "")).lower()
                         if err_code == 429 or "rate limit" in err_msg or "quota" in err_msg:
                             raise LLMRateLimitError("OpenRouter rate limit exceeded. Try again later.")
+                        # Empty completion: model responded but produced no output text.
+                        # Treat as a recoverable model-response failure so the fallback fires.
+                        if "model output must contain either output text or tool calls" in err_msg:
+                            raise LLMResponseError(
+                                "Model returned an empty completion (no output text). Fallback will be attempted."
+                            )
                     raise LLMUnavailableError("OpenRouter returned an error response.")
 
                 try:

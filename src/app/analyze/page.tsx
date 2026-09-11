@@ -44,7 +44,7 @@ export default function AnalyzeProductPage() {
 
   const realProcessingStages = [
     t("analyze.processing.step1", "Submitting product formulation..."),
-    t("analyze.processing.step2", "Querying statutory knowledge base & Section 3(p)..."),
+    t("analyze.processing.step2", "Running targeted statutory retrieval..."),
     t("analyze.processing.step3", "Evaluating legal evidence & regulatory standards..."),
     t("analyze.processing.step4", "Generating grounded intelligence analysis..."),
   ];
@@ -69,12 +69,8 @@ export default function AnalyzeProductPage() {
     setIsProcessing(true);
     setProcessingStage(0);
 
-    // Progress interval for truthful UX feedback
-    const stageTimer = setInterval(() => {
-      setProcessingStage((prev) => (prev < realProcessingStages.length - 1 ? prev + 1 : prev));
-    }, 1200);
-
     try {
+      setProcessingStage(1);
       const result = await submitProductAnalysis({
         productName: productName.trim(),
         category,
@@ -84,10 +80,9 @@ export default function AnalyzeProductPage() {
         jurisdiction,
       });
 
-      clearInterval(stageTimer);
+      setProcessingStage(realProcessingStages.length - 1);
       router.push(`/analysis/${result.id}?jurisdiction=${encodeURIComponent(jurisdiction)}&category=${encodeURIComponent(category)}&name=${encodeURIComponent(productName)}`);
     } catch (err: unknown) {
-      clearInterval(stageTimer);
       setIsProcessing(false);
       const msg = err instanceof Error ? err.message : "Failed to analyze formulation. Please try again.";
       setErrorMessage(msg);
@@ -111,7 +106,7 @@ export default function AnalyzeProductPage() {
         <p className="text-sm text-[#A3B3A9] max-w-xl mx-auto leading-relaxed">
           {t(
             "analyze.subtitle",
-            "Submit your product details for preliminary AI-assisted classification, Section 3(p) TK checks, and regulatory compliance identification grounded in authoritative legal sources."
+            "Submit your product details for preliminary AI-assisted classification, traditional-knowledge checks, and regulatory compliance identification grounded in authoritative legal sources."
           )}
         </p>
       </div>
