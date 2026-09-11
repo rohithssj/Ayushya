@@ -240,14 +240,14 @@ class ProductAnalysisResult:
         }
         if self.classification is not None:
             result["classification"] = self.classification.to_dict()
-        if self.ip_assessment:
-            result["ip_assessment"] = [i.to_dict() for i in self.ip_assessment]
-        if self.regulatory_assessment:
-            result["regulatory_assessment"] = [r.to_dict() for r in self.regulatory_assessment]
-        if self.tk_biodiversity is not None:
-            result["tk_biodiversity"] = self.tk_biodiversity.to_dict()
-        if self.compliance_checklist:
-            result["compliance_checklist"] = [c.to_dict() for c in self.compliance_checklist]
+        result["ip_assessment"] = [i.to_dict() for i in self.ip_assessment] if self.ip_assessment else []
+        result["regulatory_assessment"] = [r.to_dict() for r in self.regulatory_assessment] if self.regulatory_assessment else []
+        result["tk_biodiversity"] = self.tk_biodiversity.to_dict() if self.tk_biodiversity is not None else None
+        result["compliance_checklist"] = (
+            [c.to_dict() for c in self.compliance_checklist]
+            if self.compliance_checklist
+            else []
+        )
         return result
 
 

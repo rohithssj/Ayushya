@@ -97,11 +97,26 @@ def parse_structured_analysis_response(
         parsed = _extract_json_object(cleaned)
 
     if parsed is None:
+        # Last-resort: strip <thinking>...</thinking> XML blocks then retry.
+        # Some reasoning models (e.g. Nemotron) emit a thinking block before the JSON
+        # even when instructed not to. Strip it and try again.
+        no_thinking = _strip_thinking_blocks(raw_llm_output)
+        if no_thinking != raw_llm_output.strip():
+            cleaned2 = _strip_markdown_fences(no_thinking)
+            try:
+                candidate2 = json.loads(cleaned2)
+                if isinstance(candidate2, dict):
+                    parsed = candidate2
+            except json.JSONDecodeError:
+                pass
+            if parsed is None:
+                parsed = _extract_json_object(cleaned2)
+
+    if parsed is None:
         return _fallback_with_summary(
             raw_llm_output, "LLM output could not be parsed as JSON."
         )
 
-    # ── Extract and validate each field ───────────────────────────────────
     result: Dict[str, Any] = {"_parse_fallback": False}
 
     # grounded_summary — use raw text if JSON summary is too short
@@ -136,21 +151,43 @@ def parse_structured_analysis_response(
 
 
 def _validate_citation_ids(raw_ids: Any, valid: Set[str]) -> List[str]:
-    """Return only the citation IDs that exist in the valid set. Discard all others."""
+    """Return only the citation IDs that exist in the valid set. Discard all others.
+
+    Safe normalization applied:
+    - Strip leading/trailing whitespace
+    - Normalize to lowercase (citation IDs are hex-based and case-insensitive)
+    - Deduplicate while preserving first occurrence
+    """
     if not isinstance(raw_ids, list):
-        return []
+        # Also accept a bare string as a single-element list
+        if isinstance(raw_ids, str) and raw_ids.strip():
+            raw_ids = [raw_ids]
+        else:
+            return []
+    seen: Set[str] = set()
     validated = []
     for cid in raw_ids:
-        if isinstance(cid, str) and cid.strip() in valid:
-            validated.append(cid.strip())
+        if not isinstance(cid, str):
+            continue
+        normalized = cid.strip().lower()
+        if normalized in valid and normalized not in seen:
+            validated.append(normalized)
+            seen.add(normalized)
     return validated
 
 
 def _validate_single_citation_id(raw: Any, valid: Set[str]) -> Optional[str]:
-    """Validate a single citation_id string. Returns None if invalid."""
+    """Validate a single citation_id string. Returns None if invalid.
+
+    Safe normalization: strips whitespace, lowercases.
+    Rejects IDs not in the valid set.
+    """
+    if isinstance(raw, list) and raw:
+        # Accept list-of-one as a convenience
+        raw = raw[0]
     if not isinstance(raw, str):
         return None
-    cid = raw.strip()
+    cid = raw.strip().lower()
     return cid if cid in valid else None
 
 
@@ -346,9 +383,13 @@ def _validate_compliance_checklist(
         }
 
         # Checklist items must be traceable to supplied evidence.
-        cid = _validate_single_citation_id(
-            item.get("supporting_citation_id"), valid_citation_ids
-        )
+        cid_raw = item.get("supporting_citation_id")
+        if cid_raw is None:
+            cid_raw = item.get("supporting_citation_ids")
+        if isinstance(cid_raw, list) and cid_raw:
+            cid_raw = cid_raw[0]
+
+        cid = _validate_single_citation_id(cid_raw, valid_citation_ids)
         if not cid:
             continue
         entry["supporting_citation_id"] = cid
@@ -372,6 +413,23 @@ def _strip_markdown_fences(text: str) -> str:
     if match:
         return match.group(1).strip()
     return stripped
+
+
+def _strip_thinking_blocks(text: str) -> str:
+    """Strip <thinking>...</thinking> blocks emitted by reasoning models.
+
+    Some models (e.g. Nemotron) emit a chain-of-thought thinking section before
+    the actual JSON output, even when instructed not to. These blocks are harmless
+    formatting noise; stripping them is safe and does NOT accept malformed JSON.
+    Only well-formed XML-style thinking tags are stripped — not arbitrary content.
+    """
+    cleaned = re.sub(
+        r"<thinking>.*?</thinking>",
+        "",
+        text,
+        flags=re.DOTALL | re.IGNORECASE,
+    ).strip()
+    return cleaned
 
 
 def _extract_json_object(text: str) -> Optional[Dict[str, Any]]:

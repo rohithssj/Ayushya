@@ -88,6 +88,7 @@ class QueryBuilder:
             "patent_ip": self._build_patent_query,
             "regulatory_drugs_cosmetics": self._build_regulatory_dc_query,
             "regulatory_ayurveda_aahar": self._build_regulatory_aahar_query,
+            "compliance_checklist": self._build_compliance_query,
             "traditional_knowledge": self._build_tk_biodiversity_query,
             "trademark": self._build_trademark_query,
             "gi_protection": self._build_gi_query,
@@ -213,6 +214,26 @@ class QueryBuilder:
             why_constructed=(
                 "Targets FSSAI Ayurveda Aahar regulatory requirements applicable "
                 "to Ayurvedic food supplements."
+            ),
+        )
+
+    def _build_compliance_query(
+        self, request: ProductAnalysisRequest, dimension: AnalysisDimension
+    ) -> TargetedQuery:
+        ing_str = self._ingredient_summary(request)
+        return TargetedQuery(
+            query_text=(
+                "compliance requirements manufacturing license labeling packaging claims "
+                "warning statements Schedule approval registration regulatory authority "
+                f"{request.product_form}"
+                + (f" containing {ing_str}" if ing_str else "")
+            ),
+            dimension=dimension.dimension,
+            legal_domain=dimension.legal_domain,
+            jurisdiction=request.jurisdiction,
+            why_constructed=(
+                "Targets statutory compliance rules, labeling, packaging, and licensing "
+                "provisions applicable to this product category."
             ),
         )
 

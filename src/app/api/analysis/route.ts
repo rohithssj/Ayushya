@@ -122,12 +122,17 @@ export async function POST(request: Request) {
   // ── Locate product_analysis_api.py (dedicated product analysis script) ──
   const scriptPath = path.join(baseDir, 'scripts', 'product_analysis_api.py');
 
-  let pythonPath = path.join(baseDir, '.venv', 'Scripts', 'python.exe');
-  if (!fs.existsSync(pythonPath)) {
-    pythonPath = path.join(baseDir, '.venv', 'bin', 'python');
-  }
-  if (!fs.existsSync(pythonPath)) {
-    pythonPath = 'python';
+  let pythonPath = 'python';
+  if (process.platform === 'win32') {
+    const venvWinPy = path.join(baseDir, '.venv', 'Scripts', 'python.exe');
+    if (fs.existsSync(venvWinPy)) {
+      pythonPath = venvWinPy;
+    }
+  } else {
+    const venvPosix = path.join(baseDir, '.venv', 'bin', 'python');
+    if (fs.existsSync(venvPosix)) {
+      pythonPath = venvPosix;
+    }
   }
 
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -162,7 +167,8 @@ export async function POST(request: Request) {
       cwd: baseDir,
       timeout: 120000, // 2 minutes finite upper bound (accommodates cold start + retrieval + primary/fallback LLM)
       maxBuffer: 10 * 1024 * 1024, // 10MB explicit maxBuffer to prevent I/O truncation
-      shell: true, // Required on Windows for virtualenv execution without spawn EPERM / Access is denied
+      shell: true,
+      windowsHide: true,
       env: {
         ...process.env,
         PYTHONIOENCODING: 'utf-8',
@@ -170,7 +176,7 @@ export async function POST(request: Request) {
         OPENROUTER_API_KEY: apiKey,
         LLM_MODEL: process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b',
         LLM_FALLBACK_MODELS: process.env.LLM_FALLBACK_MODELS || '',
-        LLM_TIMEOUT_SECONDS: process.env.LLM_TIMEOUT_SECONDS || '15',
+        LLM_TIMEOUT_SECONDS: process.env.LLM_TIMEOUT_SECONDS || '45',
       },
     });
 

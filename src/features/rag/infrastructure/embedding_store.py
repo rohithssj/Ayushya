@@ -5,6 +5,9 @@ from typing import Any, Dict, List
 import numpy as np
 
 
+_STORE_CACHE: Dict[Path, tuple[np.ndarray, List[Dict[str, Any]], str]] = {}
+
+
 class EmbeddingStore:
     """File-backed local storage for normalized vectors and chunk metadata."""
 
@@ -34,8 +37,13 @@ class EmbeddingStore:
         }
         with self.metadata_path.open("w", encoding="utf-8") as file:
             json.dump(payload, file, indent=2, ensure_ascii=False)
+        _STORE_CACHE.pop(self.store_dir.resolve(), None)
 
     def load(self) -> tuple[np.ndarray, List[Dict[str, Any]], str]:
+        resolved_path = self.store_dir.resolve()
+        if resolved_path in _STORE_CACHE:
+            return _STORE_CACHE[resolved_path]
+
         if not self.vectors_path.exists() or not self.metadata_path.exists():
             raise FileNotFoundError(
                 f"Embedding store is incomplete: expected {self.vectors_path} and {self.metadata_path}"
@@ -49,4 +57,7 @@ class EmbeddingStore:
             raise ValueError("Embedding metadata is missing chunks or model_name")
         if vectors.shape[0] != len(chunks):
             raise ValueError("Embedding vectors and metadata contain different counts")
-        return vectors, chunks, model_name
+
+        result = (vectors, chunks, model_name)
+        _STORE_CACHE[resolved_path] = result
+        return result

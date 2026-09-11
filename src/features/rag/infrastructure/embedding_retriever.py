@@ -7,6 +7,9 @@ from src.features.rag.domain.chunk_quality import is_retrievable_chunk
 from src.features.rag.infrastructure.embedding_store import EmbeddingStore
 
 
+_MODEL_CACHE: Dict[str, Any] = {}
+
+
 class EmbeddingRetriever:
     """Semantic search over the local normalized embedding store."""
 
@@ -49,6 +52,9 @@ class EmbeddingRetriever:
         ]
 
     def _encode_query(self, query: str) -> np.ndarray:
+        if self.model_name in _MODEL_CACHE:
+            self._model = _MODEL_CACHE[self.model_name]
+
         if self._model is None:
             try:
                 from sentence_transformers import SentenceTransformer
@@ -56,7 +62,16 @@ class EmbeddingRetriever:
                 raise RuntimeError(
                     "sentence-transformers is required; install it before searching embeddings"
                 ) from error
-            self._model = SentenceTransformer(self.model_name)
+
+            try:
+                # Try loading from local HuggingFace cache first to avoid remote Hub timeouts
+                self._model = SentenceTransformer(self.model_name, local_files_only=True)
+            except Exception:
+                # Fall back to remote lookup/download if model weights are not cached locally yet
+                self._model = SentenceTransformer(self.model_name, local_files_only=False)
+
+            _MODEL_CACHE[self.model_name] = self._model
+
         vector = self._model.encode(
             [query],
             convert_to_numpy=True,

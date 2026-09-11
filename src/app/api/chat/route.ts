@@ -112,12 +112,17 @@ export async function POST(request: Request) {
   const baseDir = process.cwd();
   const scriptPath = path.join(baseDir, 'scripts', 'grounded_answer_api.py');
 
-  let pythonPath = path.join(baseDir, '.venv', 'Scripts', 'python.exe');
-  if (!fs.existsSync(pythonPath)) {
-    pythonPath = path.join(baseDir, '.venv', 'bin', 'python');
-  }
-  if (!fs.existsSync(pythonPath)) {
-    pythonPath = 'python';
+  let pythonPath = 'python';
+  if (process.platform === 'win32') {
+    const venvWinPy = path.join(baseDir, '.venv', 'Scripts', 'python.exe');
+    if (fs.existsSync(venvWinPy)) {
+      pythonPath = venvWinPy;
+    }
+  } else {
+    const venvPosix = path.join(baseDir, '.venv', 'bin', 'python');
+    if (fs.existsSync(venvPosix)) {
+      pythonPath = venvPosix;
+    }
   }
 
   // ── Security: pass API key from server env only ──

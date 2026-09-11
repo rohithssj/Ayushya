@@ -9,6 +9,9 @@ from src.features.rag.domain.retrieval import RetrievalResult
 from src.features.rag.domain.chunk_quality import is_retrievable_chunk
 
 
+_LEXICAL_CACHE: Dict[Path, tuple[List[Dict[str, Any]], Dict[str, int]]] = {}
+
+
 class LexicalRetriever:
     """Retrieve legal chunks using TF-IDF cosine similarity.
 
@@ -25,8 +28,16 @@ class LexicalRetriever:
 
     def __init__(self, processed_dir: str, chunks: Optional[List[Dict[str, Any]]] = None):
         self.processed_dir = Path(processed_dir)
-        self.chunks = chunks if chunks is not None else self._load_chunks()
-        self.document_frequency = self._build_document_frequency(self.chunks)
+        resolved_path = self.processed_dir.resolve()
+        if chunks is not None:
+            self.chunks = chunks
+            self.document_frequency = self._build_document_frequency(self.chunks)
+        elif resolved_path in _LEXICAL_CACHE:
+            self.chunks, self.document_frequency = _LEXICAL_CACHE[resolved_path]
+        else:
+            self.chunks = self._load_chunks()
+            self.document_frequency = self._build_document_frequency(self.chunks)
+            _LEXICAL_CACHE[resolved_path] = (self.chunks, self.document_frequency)
 
     def search(
         self,

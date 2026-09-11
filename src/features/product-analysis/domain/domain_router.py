@@ -214,6 +214,23 @@ class DomainRouter:
                 )
             )
 
+        # ── 4b. Compliance Checklist ──────────────────────────────────────
+        compliance_domain = (
+            "ayurveda-aahar"
+            if any(k in cls_lower for k in ("aahar", "food", "nutraceutical", "dietary"))
+            else "drugs-cosmetics"
+        )
+        dimensions.append(
+            AnalysisDimension(
+                dimension="compliance_checklist",
+                legal_domain=compliance_domain,
+                why_relevant=(
+                    "Statutory compliance obligations (labeling, manufacturing rules, "
+                    "Schedule requirements, approval, registration) apply to this formulation."
+                ),
+            )
+        )
+
         # ── 5. Traditional Knowledge / Biodiversity ────────────────────────
         ingredient_text = " ".join(
             ing.name.lower() for ing in request.ingredients

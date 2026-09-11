@@ -235,6 +235,7 @@ class ProductAnalysisUseCase:
                 user_prompt=user_prompt,
                 max_tokens=_PRODUCT_ANALYSIS_MAX_TOKENS,
                 response_format={"type": "json_object"},
+                timeout_seconds=45,
             )
         except LLMProviderError as e:
             return {
