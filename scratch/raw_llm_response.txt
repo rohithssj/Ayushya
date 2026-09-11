@@ -1,0 +1,66 @@
+{
+  "grounded_summary": "The Ashwagandha Wellness Tablet, classified as Ayurveda-Aahar, may be subject to various regulations in India. The product's formulation and packaging must comply with the Food Safety and Standards (Ayurveda Aahara) Regulations, 2022. The use of Ashwagandha, Pippali, and Black Pepper in the product may be considered traditional knowledge, and the product may be eligible for patent protection under the Patents Act, 1970. The product's labeling and packaging must also comply with the Trade Marks Act, 1999, and the Guidelines on Access to Biological Resources and Associated Knowledge and Equitable Benefit Sharing Regulations, 2025.",
+  "classification": {
+    "user_selected": "Ayurveda-Aahar",
+    "preliminary_assessment": "The product may be classified as Ayurveda-Aahar, subject to verification of compliance with relevant regulations",
+    "evidence_strength": "moderate",
+    "requires_verification": true,
+    "supporting_citation_ids": ["cit_33ed7a55a1ce", "cit_9128744f672a"]
+  },
+  "ip_assessment": [
+    {
+      "ip_type": "Patent",
+      "relevance": "potentially_relevant",
+      "preliminary_assessment": "The product may be eligible for patent protection under the Patents Act, 1970, subject to verification of novelty and inventive step",
+      "reasoning": "The use of Ashwagandha, Pippali, and Black Pepper in the product may be considered traditional knowledge, and the product may be eligible for patent protection under the Patents Act, 1970",
+      "evidence_strength": "moderate",
+      "requires_verification": true,
+      "supporting_citation_ids": ["cit_2789e3cc8e4c", "cit_7fb75e90d8d5c"]
+    }
+  ],
+  "regulatory_assessment": [
+    {
+      "framework": "Food Safety and Standards (Ayurveda Aahara) Regulations, 2022",
+      "why_applicable": "The product is classified as Ayurveda-Aahar and must comply with relevant regulations",
+      "relevant_provisions": ["Section 13", "Section 6", "Section 10"],
+      "evidence_strength": "strong",
+      "requires_verification": true,
+      "supporting_citation_ids": ["cit_33ed7a55a1ce", "cit_4cc46bcb1a9b", "cit_9128744f672a"]
+    }
+  ],
+  "tk_biodiversity": {
+    "tk_considerations": "The use of Ashwagandha, Pippali, and Black Pepper in the product may be considered traditional knowledge",
+    "biodiversity_considerations": "The product may be subject to the Guidelines on Access to Biological Resources and Associated Knowledge and Equitable Benefit Sharing Regulations, 2025",
+    "abs_note": "The product may be required to comply with access and benefit-sharing regulations",
+    "evidence_strength": "moderate",
+    "requires_verification": true,
+    "supporting_citation_ids": ["cit_2789e3cc8e4c", "cit_4cc46bcb1a9b", "cit_85c8f4f4a1a5"],
+    "insufficient": false
+  },
+  "compliance_checklist": [
+    {
+      "action": "Verify compliance with Food Safety and Standards (Ayurveda Aahara) Regulations, 2022",
+      "reason": "The product is classified as Ayurveda-Aahar and must comply with relevant regulations",
+      "legal_area": "Food Safety",
+      "priority": "high",
+      "requires_verification": true,
+      "supporting_citation_id": "cit_33ed7a55a1ce"
+    },
+    {
+      "action": "Conduct patent search and verify novelty and inventive step",
+      "reason": "The product may be eligible for patent protection under the Patents Act, 1970",
+      "legal_area": "Intellectual Property",
+      "priority": "medium",
+      "requires_verification": true,
+      "supporting_citation_id": "cit_2789e3cc8e4c"
+    },
+    {
+      "action": "Comply with labeling and packaging requirements under the Trade Marks Act, 1999",
+      "reason": "The product's labeling and packaging must comply with relevant regulations",
+      "legal_area": "Trade Marks",
+      "priority": "low",
+      "requires_verification": true,
+      "supporting_citation_id": "cit_85c8f4f4a1a5"
+    }
+  ]
+}

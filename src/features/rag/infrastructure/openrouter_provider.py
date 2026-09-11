@@ -126,6 +126,7 @@ class OpenRouterProvider:
         user_prompt: str,
         max_tokens: int = DEFAULT_MAX_TOKENS,
         temperature: float = DEFAULT_TEMPERATURE,
+        response_format: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Call OpenRouter chat completions with model fallback routing.
@@ -156,6 +157,8 @@ class OpenRouterProvider:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
+            if response_format:
+                payload["response_format"] = response_format
 
             body = json.dumps(payload).encode("utf-8")
             headers = {

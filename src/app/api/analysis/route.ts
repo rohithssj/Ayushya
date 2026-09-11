@@ -8,11 +8,15 @@ import type {
   AnalysisApiResponse,
   AnalysisApiErrorResponse,
   IngredientInput,
+  ClassificationAssessment,
+  IPAssessmentItem,
+  RegulatoryAssessmentItem,
+  TKBiodiversityAssessment,
+  ComplianceItem,
 } from '@/features/rag/types/analysis_api';
 import {
   Jurisdiction,
   VALID_JURISDICTIONS,
-  VALID_DOMAINS,
 } from '@/features/rag/types/retrieval_api';
 
 const execFileAsync = promisify(execFile);
@@ -97,27 +101,26 @@ export async function POST(request: Request) {
     return createErrorResponse('VALIDATION_ERROR', 'Field "jurisdiction" is required.', 422);
   }
   const normJur = rawReq.jurisdiction.trim().toLowerCase();
-  const jurisdiction: Jurisdiction = normJur.includes('international') ? 'International' : 'India';
-
-  // ── Construct targeted formulation intelligence query ──
-  const ingredientNames = ingredients.map((i) => i.name).join(', ');
-  const formulationContext = ingredientNames ? `Ingredients: ${ingredientNames}.` : '';
-  const query = `Legal and regulatory requirements, patent eligibility, traditional knowledge exclusions under Section 3(p)/3(e), and compliance standards for "${productName}" (${category} formulation in ${form} form). ${formulationContext} Description: ${description}`.trim();
-
-  // ── Map category to relevant legal domain filter if applicable ──
-  let domain: string | null = null;
-  const lowerCat = category.toLowerCase();
-  if (lowerCat.includes('aahar') || lowerCat.includes('food')) {
-    domain = 'ayurveda-aahar';
-  } else if (lowerCat.includes('cosmetic')) {
-    domain = 'drugs-cosmetics';
-  } else if (lowerCat.includes('patent') || lowerCat.includes('extract')) {
-    domain = 'patents';
+  if (!VALID_JURISDICTIONS.has(normJur)) {
+    return createErrorResponse(
+      'VALIDATION_ERROR',
+      `Invalid jurisdiction "${rawReq.jurisdiction}". Supported: "India", "International".`,
+      422
+    );
   }
+  const jurisdiction: Jurisdiction = normJur === 'india' ? 'India' : 'International';
+
+  // ── Optional traditional knowledge reference ──
+  const traditional_knowledge_ref =
+    typeof rawReq.traditional_knowledge_ref === 'string' && rawReq.traditional_knowledge_ref.trim()
+      ? rawReq.traditional_knowledge_ref.trim()
+      : undefined;
 
   const analysisId = generateAnalysisId(productName);
   const baseDir = process.cwd();
-  const scriptPath = path.join(baseDir, 'scripts', 'grounded_answer_api.py');
+
+  // ── Locate product_analysis_api.py (dedicated product analysis script) ──
+  const scriptPath = path.join(baseDir, 'scripts', 'product_analysis_api.py');
 
   let pythonPath = path.join(baseDir, '.venv', 'Scripts', 'python.exe');
   if (!fs.existsSync(pythonPath)) {
@@ -136,24 +139,34 @@ export async function POST(request: Request) {
     );
   }
 
+  // ── Build structured payload for product_analysis_api.py ──
+  const payload: Record<string, unknown> = {
+    productName,
+    category,
+    form,
+    description,
+    ingredients,
+    jurisdiction,
+  };
+  if (traditional_knowledge_ref) {
+    payload.traditional_knowledge_ref = traditional_knowledge_ref;
+  }
+
   const args = [
     scriptPath,
-    '--query', query,
-    '--jurisdiction', jurisdiction,
-    '--top-k', '5',
-    '--request-id', analysisId,
+    '--analysis-id', analysisId,
   ];
-  if (domain && VALID_DOMAINS.has(domain)) {
-    args.push('--domain', domain);
-  }
 
   try {
     const { stdout } = await execFileAsync(pythonPath, args, {
       cwd: baseDir,
-      timeout: 90000,
+      timeout: 120000, // 2 minutes finite upper bound (accommodates cold start + retrieval + primary/fallback LLM)
+      maxBuffer: 10 * 1024 * 1024, // 10MB explicit maxBuffer to prevent I/O truncation
+      shell: true, // Required on Windows for virtualenv execution without spawn EPERM / Access is denied
       env: {
         ...process.env,
         PYTHONIOENCODING: 'utf-8',
+        PRODUCT_PAYLOAD: JSON.stringify(payload),
         OPENROUTER_API_KEY: apiKey,
         LLM_MODEL: process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b',
         LLM_FALLBACK_MODELS: process.env.LLM_FALLBACK_MODELS || '',
@@ -165,7 +178,21 @@ export async function POST(request: Request) {
       return createErrorResponse('LLM_UNAVAILABLE', 'Analysis service returned empty output.', 503);
     }
 
-    const pythonResult = JSON.parse(stdout);
+    let pythonResult: Record<string, unknown>;
+    try {
+      pythonResult = JSON.parse(stdout);
+    } catch {
+      console.error('[ProductAnalysisAPI] Failed to parse JSON output from python bridge.');
+      return createErrorResponse('ANALYSIS_FAILED', 'Analysis service returned malformed output.', 500);
+    }
+
+    // ── Map Python result to extended AnalysisApiResponse ──
+    const evidenceStrength = (pythonResult.evidence_strength as string) || 'insufficient';
+    const abstained = Boolean(pythonResult.abstained);
+    const groundedSummary = (pythonResult.grounded_summary as string | null) ?? null;
+
+    // For backward compatibility 'answer' = grounded_summary
+    const answer = groundedSummary;
 
     const responsePayload: AnalysisApiResponse = {
       id: analysisId,
@@ -175,29 +202,54 @@ export async function POST(request: Request) {
       description,
       ingredients,
       jurisdiction,
-      query,
-      answer: pythonResult.answer ?? null,
-      abstained: Boolean(pythonResult.abstained),
-      abstention_reason: pythonResult.abstention_reason ?? null,
-      evidence_strength: pythonResult.evidence_strength || 'insufficient',
+      // Human-readable summary query (not the LLM query — targeted queries were used internally)
+      query: `Product formulation analysis for "${productName}" (${category}, ${form}) in ${jurisdiction} jurisdiction.`,
+      answer,
+      abstained,
+      abstention_reason: (pythonResult.abstention_reason as string | null) ?? null,
+      evidence_strength: evidenceStrength as AnalysisApiResponse['evidence_strength'],
       requires_human_review: Boolean(pythonResult.requires_human_review),
-      citations: Array.isArray(pythonResult.citations) ? pythonResult.citations : [],
-      evidence: pythonResult.evidence || { selected: [], count: 0 },
-      evidence_assessment: pythonResult.evidence_assessment || {
-        strength: pythonResult.evidence_strength || 'insufficient',
-        abstention_recommended: Boolean(pythonResult.abstained),
+      citations: Array.isArray(pythonResult.citations) ? (pythonResult.citations as string[]) : [],
+      evidence: (pythonResult.evidence as AnalysisApiResponse['evidence']) || { selected: [], count: 0 },
+      evidence_assessment: (pythonResult.evidence_assessment as AnalysisApiResponse['evidence_assessment']) || {
+        strength: evidenceStrength,
+        abstention_recommended: abstained,
         requires_human_review: Boolean(pythonResult.requires_human_review),
         reasons: [],
       },
       createdAt: new Date().toISOString(),
+      // ── Structured analysis fields ──
+      grounded_summary: groundedSummary,
+      analysis_id: (pythonResult.analysis_id as string) || analysisId,
+      domains_queried: Array.isArray(pythonResult.domains_queried)
+        ? (pythonResult.domains_queried as string[])
+        : [],
+      query_count: typeof pythonResult.query_count === 'number' ? pythonResult.query_count : 0,
+      ...(pythonResult.classification
+        ? { classification: pythonResult.classification as ClassificationAssessment }
+        : {}),
+      ...(Array.isArray(pythonResult.ip_assessment) && {
+        ip_assessment: pythonResult.ip_assessment as IPAssessmentItem[],
+      }),
+      ...(Array.isArray(pythonResult.regulatory_assessment) && {
+        regulatory_assessment: pythonResult.regulatory_assessment as RegulatoryAssessmentItem[],
+      }),
+      ...(pythonResult.tk_biodiversity
+        ? { tk_biodiversity: pythonResult.tk_biodiversity as TKBiodiversityAssessment }
+        : {}),
+      ...(Array.isArray(pythonResult.compliance_checklist) && {
+        compliance_checklist: pythonResult.compliance_checklist as ComplianceItem[],
+      }),
       ...(pythonResult.error === 'llm_provider_error' && {
-        error: 'llm_provider_error',
-        error_message: pythonResult.error_message,
+        error: 'llm_provider_error' as const,
+        error_message: pythonResult.error_message as string,
       }),
     };
 
     return NextResponse.json(responsePayload, { status: 200 });
   } catch (err: unknown) {
+    const errObj = err as { code?: string; killed?: boolean; signal?: string; message?: string };
+    console.error(`[ProductAnalysisAPI] Subprocess error [code=${errObj.code || 'UNKNOWN'}, killed=${Boolean(errObj.killed)}, signal=${errObj.signal || 'NONE'}]`);
     const message = err instanceof Error ? err.message : String(err);
     return createErrorResponse(
       'ANALYSIS_FAILED',

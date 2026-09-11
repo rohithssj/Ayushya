@@ -59,18 +59,36 @@ export function getStoredAnalysis(id: string): AnalysisApiResponse | null {
   }
 
   try {
-    // Check specific id
+    // 1. Check specific id exact key
     const item = window.sessionStorage.getItem(`${STORAGE_PREFIX}${id}`);
     if (item) {
       return JSON.parse(item);
     }
 
-    // Check if latest matches
+    // 2. Check if latest matches
     const latest = window.sessionStorage.getItem(`${STORAGE_PREFIX}latest`);
     if (latest) {
       const parsed: AnalysisApiResponse = JSON.parse(latest);
-      if (parsed.id === id || id === "latest") {
+      if (parsed.id === id || parsed.id?.toLowerCase() === id?.toLowerCase() || id === "latest") {
         return parsed;
+      }
+    }
+
+    // 3. Scan all session storage keys matching prefix for a matching parsed.id
+    for (let i = 0; i < window.sessionStorage.length; i++) {
+      const key = window.sessionStorage.key(i);
+      if (key && key.startsWith(STORAGE_PREFIX) && key !== `${STORAGE_PREFIX}latest`) {
+        const raw = window.sessionStorage.getItem(key);
+        if (raw) {
+          try {
+            const parsed: AnalysisApiResponse = JSON.parse(raw);
+            if (parsed.id === id || parsed.id?.toLowerCase() === id?.toLowerCase()) {
+              return parsed;
+            }
+          } catch {
+            // Ignore parse errors for stale keys
+          }
+        }
       }
     }
   } catch (e) {
