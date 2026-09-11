@@ -20,6 +20,7 @@ import {
   Check,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import HeroLotusContainer from "@/components/Hero/HeroLotusContainer";
 
 export default function Home() {
   const { t } = useLanguage();
@@ -159,20 +160,33 @@ export default function Home() {
             <span>Statutory Legal AI • India & International Jurisdictions</span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12] font-display">
-            <span className="text-[#F4F8F5] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
-              {t("home.hero.title1", "AI-Powered")}
-            </span>{" "}
-            <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] via-[#34D399] to-[#D4AF37] drop-shadow-[0_0_40px_rgba(8,127,91,0.5)]">
-              {t("home.hero.title2", "IP & Regulatory")}
-            </span>{" "}
-            <br className="hidden sm:block" />
-            <span className="text-[#F4F8F5] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
-              {t("home.hero.title3", "Intelligence for Ayurveda")}
-            </span>
-          </h1>
+          {/* Main Headline with 3D Ayurvedic Lotus Flower Centered Directly in Background */}
+          <div className="relative flex items-center justify-center">
+            {/* 3D Interactive Ayurvedic Lotus Flower (Middel Backside of Title Text) */}
+            <div
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[480px] md:w-[600px] lg:w-[720px] xl:w-[820px] h-[340px] sm:h-[480px] md:h-[600px] lg:h-[720px] xl:h-[820px] pointer-events-none -z-10 select-none transition-opacity duration-300"
+              style={{
+                opacity: heroOpacity,
+              }}
+              aria-hidden="true"
+            >
+              <HeroLotusContainer />
+            </div>
+
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12] font-display relative z-10">
+              <span className="text-[#F4F8F5] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+                {t("home.hero.title1", "AI-Powered")}
+              </span>{" "}
+              <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] via-[#34D399] to-[#D4AF37] drop-shadow-[0_0_40px_rgba(8,127,91,0.5)]">
+                {t("home.hero.title2", "IP & Regulatory")}
+              </span>{" "}
+              <br className="hidden sm:block" />
+              <span className="text-[#F4F8F5] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+                {t("home.hero.title3", "Intelligence for Ayurveda")}
+              </span>
+            </h1>
+          </div>
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg text-[#A3B3A9] max-w-2xl mx-auto leading-relaxed font-normal drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">

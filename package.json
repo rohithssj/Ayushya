@@ -20,12 +20,14 @@
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.1",
     "tailwindcss": "^4.0.0",
+    "three": "^0.174.0",
     "tw-animate-css": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.174.0",
     "postcss": "^8.5.0",
     "typescript": "^5.7.0"
   }

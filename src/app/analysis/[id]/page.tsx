@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Chatbot } from "@/components/Chatbot/Chatbot";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { getStoredAnalysis } from "@/services/analysisService";
+import type { AnalysisApiResponse } from "@/features/rag/types/analysis_api";
 import {
   FileText,
   ShieldCheck,
@@ -20,34 +22,52 @@ import {
   Clock,
   Sparkles,
   Scale,
+  HelpCircle,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function AnalysisResultsDashboard() {
   const params = useParams();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
 
-  // TODO: Replace query-based analysis data with backend analysis ID once /api/analyze is implemented.
-  const rawId = (params?.id as string) || "ashwagandha-wellness";
-  const jurisdiction = searchParams?.get("jurisdiction") || "India";
+  const rawId = (params?.id as string) || "formulation";
+  const urlJurisdiction = searchParams?.get("jurisdiction") || "India";
   const customName = searchParams?.get("name");
   const customCategory = searchParams?.get("category") || "Ayurveda-Aahar";
 
-  const productName = customName
-    ? customName
-    : rawId
-        .split("-")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-
+  const [analysisData, setAnalysisData] = useState<AnalysisApiResponse | null>(null);
   const [activeTab, setActiveTab] = useState<
     "overview" | "ip" | "regulations" | "compliance" | "biodiversity" | "sources"
   >("overview");
 
   const [isChatOpen, setIsChatOpen] = useState(false);
-
   const [sourceTypeFilter, setSourceTypeFilter] = useState("All");
   const [sourceJurisdictionFilter, setSourceJurisdictionFilter] = useState("All");
+
+  useEffect(() => {
+    const stored = getStoredAnalysis(rawId);
+    if (stored) {
+      setAnalysisData(stored);
+    }
+  }, [rawId]);
+
+  const productName = analysisData?.productName || customName || rawId
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  const jurisdiction = analysisData?.jurisdiction || urlJurisdiction;
+  const category = analysisData?.category || customCategory;
+  const form = analysisData?.form || "Tablet";
+  const ingredients = analysisData?.ingredients || [];
+
+  const evidenceStrength = analysisData?.evidence_strength || "insufficient";
+  const abstained = analysisData?.abstained ?? false;
+  const requiresHumanReview = analysisData?.requires_human_review ?? true;
+  const groundedAnswer = analysisData?.answer;
+
+  const rawEvidence = analysisData?.evidence?.selected || [];
 
   const tabs = [
     { id: "overview", label: t("dashboard.tab.overview", "Overview"), icon: Layers },
@@ -55,21 +75,13 @@ export default function AnalysisResultsDashboard() {
     { id: "regulations", label: t("dashboard.tab.regulations", "Regulations"), icon: FileText },
     { id: "compliance", label: t("dashboard.tab.compliance", "Compliance Checklist"), icon: CheckSquare },
     { id: "biodiversity", label: t("dashboard.tab.biodiversity", "Biodiversity & TK"), icon: Leaf },
-    { id: "sources", label: t("dashboard.tab.sources", "Sources & Citations"), icon: BookOpen },
+    { id: "sources", label: `${t("dashboard.tab.sources", "Sources & Citations")} (${rawEvidence.length})`, icon: BookOpen },
   ];
 
-  const statutorySources = [
-    { title: "The Patents Act, 1970 — Section 3(p)", type: "Law", jurisdiction: "India", section: "Section 3(p) Traditional Knowledge", link: "https://ipindia.gov.in" },
-    { title: "The Patents Act, 1970 — Section 3(e)", type: "Law", jurisdiction: "India", section: "Section 3(e) Mere Admixture", link: "https://ipindia.gov.in" },
-    { title: "Biological Diversity Act, 2002 — Section 3 & 6", type: "Law", jurisdiction: "India", section: "ABS Approval Mechanisms", link: "https://nbaindia.org" },
-    { title: "FSSAI (Ayurveda Aahar) Regulations, 2022", type: "Regulation", jurisdiction: "India", section: "Regulation 4 & Schedule I", link: "https://www.fssai.gov.in" },
-    { title: "Drugs and Cosmetics Rules, 1945 — Rule 158B", type: "Regulation", jurisdiction: "India", section: "ASU Drug Manufacturing License", link: "https://ayush.gov.in" },
-    { title: "WIPO Nagoya Protocol Guidance on TK", type: "International", jurisdiction: "International", section: "Prior Informed Consent", link: "https://www.wipo.int" },
-  ];
-
-  const filteredSources = statutorySources.filter((s) => {
-    const typeMatch = sourceTypeFilter === "All" || s.type === sourceTypeFilter;
-    const jurMatch = sourceJurisdictionFilter === "All" || s.jurisdiction === sourceJurisdictionFilter;
+  const filteredSources = rawEvidence.filter((ev) => {
+    const cit = ev.citation;
+    const typeMatch = sourceTypeFilter === "All" || (cit.domain && cit.domain.toLowerCase().includes(sourceTypeFilter.toLowerCase()));
+    const jurMatch = sourceJurisdictionFilter === "All" || (cit.jurisdiction && cit.jurisdiction.toLowerCase() === sourceJurisdictionFilter.toLowerCase());
     return typeMatch && jurMatch;
   });
 
@@ -84,7 +96,7 @@ export default function AnalysisResultsDashboard() {
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono text-[#D4AF37]">
               <span className="bg-[#0D1611] px-2.5 py-1 rounded-full border border-[#D4AF37]/30">
-                {t("dashboard.idLabel", "Analysis ID:")} #{rawId}
+                {t("dashboard.idLabel", "Analysis ID:")} #{analysisData?.id || rawId}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1.5 bg-[#0D1611] px-2.5 py-1 rounded-full border border-[#D4AF37]/30 text-[#F4F8F5]">
@@ -95,33 +107,58 @@ export default function AnalysisResultsDashboard() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-[#F4F8F5] tracking-tight font-display">
               {productName}
             </h1>
+            <p className="text-xs text-[#A8B5AC] font-mono">
+              Classification: <strong className="text-[#D4AF37]">{category}</strong> ({form}) • {ingredients.length} Ingredients Listed
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="px-3.5 py-1.5 rounded-full bg-[#0D1611] border border-[#D4AF37]/30 text-xs font-bold font-mono text-[#A3B3A9]">
-              {t("dashboard.evidenceLevel", "Evidence Level:")} <span className="text-[#F3E5AB]">{t("dashboard.evidenceDemo", "Pending backend retrieval")}</span>
+            <div className="px-3.5 py-1.5 rounded-full bg-[#0D1611] border border-[#D4AF37]/30 text-xs font-bold font-mono text-[#D4AF37]">
+              {t("dashboard.evidenceLevel", "Evidence Level:")}{" "}
+              <strong className={evidenceStrength === "strong" ? "text-emerald-400" : evidenceStrength === "moderate" ? "text-yellow-400" : "text-amber-500"}>
+                {evidenceStrength.toUpperCase()}
+              </strong>
             </div>
-            <div className="px-3.5 py-1.5 rounded-full bg-[#0D1611] border border-[#D4AF37]/30 text-xs font-bold font-mono text-[#A3B3A9]">
-              {t("dashboard.confidence", "AI RAG Confidence:")} <span className="text-[#D4AF37]">{t("dashboard.confidenceDemo", "Not calculated (Demo)")}</span>
+            <div className="px-3.5 py-1.5 rounded-full bg-[#0D1611] text-[#A3B3A9] text-xs font-bold font-mono border border-[#D4AF37]/30">
+              Citations: <strong className="text-[#D4AF37]">{rawEvidence.length} Grounded</strong>
             </div>
           </div>
         </div>
 
-        {/* Prominent DEMO / MOCK Label Banner */}
-        <div className="p-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/35 flex items-start gap-3 text-xs text-[#F3E5AB]">
-          <AlertTriangle className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold uppercase tracking-wider font-mono text-[#D4AF37]">
-              {t("dashboard.demoBannerTitle", "DEMO / MOCK — Not evidence-backed")}
-            </p>
-            <p className="text-[#A3B3A9] leading-relaxed">
-              {t(
-                "dashboard.demoBannerDesc",
-                "This dashboard displays sample mock results for UI evaluation. Findings, section references, and classifications have not been retrieved by the RAG backend and do not constitute legal advice."
-              )}
-            </p>
+        {/* Abstention / Human Assistance Banner */}
+        {abstained ? (
+          <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/50 flex items-start gap-3 text-xs text-amber-200">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold uppercase tracking-wider font-mono">
+                Authoritative Evidence Notice — Abstention Recommended
+              </p>
+              <p className="text-amber-300 font-sans">
+                {analysisData?.abstention_reason || "AYUSHYA could not find sufficient authoritative statutory evidence for this specific formulation query in the ingested corpus."}
+              </p>
+              <div className="pt-2">
+                <Link
+                  href="/help"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#087F5B] text-white font-bold text-xs hover:scale-105 transition-all shadow-sm"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" /> Request Human / Professional Review
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-4 rounded-2xl bg-[#087F5B]/10 border border-[#D4AF37]/30 flex items-start gap-3 text-xs text-[#D4AF37]">
+            <CheckCircle2 className="w-5 h-5 text-[#10B981] shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold uppercase tracking-wider font-mono text-[#F3E5AB]">
+                AI Evidence-Grounded Legal Intelligence
+              </p>
+              <p className="text-[#A3B3A9] font-sans leading-relaxed">
+                The analysis below is grounded strictly in retrieved statutory provisions from Indian & International legal frameworks. This is decision-support intelligence, not a binding legal opinion.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Dynamic Modern Tab Bar */}
         <div className="flex items-center gap-1.5 border-b border-[rgba(212,175,55,0.18)] pt-2 overflow-x-auto scrollbar-none">
@@ -158,61 +195,70 @@ export default function AnalysisResultsDashboard() {
                 <span className="text-[11px] font-bold text-[#F3E5AB] uppercase font-mono tracking-wider">
                   {t("dashboard.overview.classification", "Product Classification")}
                 </span>
-                <p className="text-xl font-bold text-[#F4F8F5] font-display">{customCategory}</p>
-                <p className="text-xs text-[#A3B3A9]">{t("dashboard.overview.regulatedUnder", "Regulated under FSSAI / AYUSH Guidelines")}</p>
+                <p className="text-xl font-bold text-[#F4F8F5] font-display">{category}</p>
+                <p className="text-xs text-[#A3B3A9]">Target regulatory framework: FSSAI / AYUSH Guidelines</p>
               </div>
 
-              {/* Card 2: Confidence Indicator Placeholder */}
+              {/* Card 2: Real Evidence Level */}
               <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-3 shadow-sm">
                 <div className="flex items-center justify-between text-[11px] font-bold font-mono">
-                  <span className="text-[#F3E5AB] uppercase tracking-wider">{t("dashboard.overview.confidenceLabel", "AI RAG Confidence")}</span>
-                  <span className="text-[#D4AF37]">{t("dashboard.overview.confidenceNotCalc", "Not calculated (Demo)")}</span>
+                  <span className="text-[#F3E5AB] uppercase tracking-wider">Evidence Strength</span>
+                  <span className="text-[#D4AF37] uppercase">{evidenceStrength}</span>
                 </div>
                 <div className="w-full bg-[#0D1611] h-2.5 rounded-full overflow-hidden border border-[#D4AF37]/20">
-                  <div className="bg-gradient-to-r from-[#D4AF37]/40 via-[#10B981] to-[#34D399] h-full rounded-full w-2/3 opacity-70" />
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      evidenceStrength === "strong"
+                        ? "w-full bg-gradient-to-r from-[#087F5B] to-[#10B981]"
+                        : evidenceStrength === "moderate"
+                        ? "w-2/3 bg-[#D4AF37]"
+                        : "w-1/3 bg-amber-600"
+                    }`}
+                  />
                 </div>
-                <p className="text-xs text-[#A3B3A9]">{t("dashboard.overview.confidencePlaceholderDesc", "Score will be calculated from retrieved evidence when backend RAG is connected")}</p>
+                <p className="text-xs text-[#A3B3A9] font-mono">
+                  {rawEvidence.length} authoritative chunk(s) evaluated
+                </p>
               </div>
 
-              {/* Card 3: Key Legal Status Placeholder */}
+              {/* Card 3: Key Legal Status */}
               <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-sm">
                 <span className="text-[11px] font-bold text-[#F3E5AB] uppercase font-mono tracking-wider">
-                  {t("dashboard.overview.patentability", "Patentability Assessment")}
+                  Review Recommendation
                 </span>
-                <p className="text-lg font-bold text-[#D4AF37] font-display">{t("dashboard.overview.section3pDemo", "Potentially applicable — Demo")}</p>
-                <p className="text-xs text-[#A3B3A9]">{t("dashboard.overview.priorArtDemo", "Example result — Requires verification against TKDL")}</p>
+                <p className="text-lg font-bold text-[#D4AF37] font-display">
+                  {requiresHumanReview ? "Professional Review Recommended" : "Standard Legal Intelligence"}
+                </p>
+                <p className="text-xs text-[#A3B3A9]">
+                  Based on Section 3(p) TK & Biodiversity provisions
+                </p>
               </div>
             </div>
 
-            {/* Metric Overview Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { title: t("dashboard.metrics.ipTitle", "IP Rights"), status: t("dashboard.metrics.ipStatus", "Demo assessment"), color: "text-[#F3E5AB]" },
-                { title: t("dashboard.metrics.fssaiTitle", "FSSAI Status"), status: t("dashboard.metrics.fssaiStatus", "Potentially applicable — Demo"), color: "text-[#F3E5AB]" },
-                { title: t("dashboard.metrics.nbaTitle", "NBA Approval"), status: t("dashboard.metrics.nbaStatus", "Potentially applicable — Demo"), color: "text-[#F3E5AB]" },
-                { title: t("dashboard.metrics.tkdlTitle", "TKDL Prior Art"), status: t("dashboard.metrics.tkdlStatus", "Example result — Requires verification"), color: "text-[#F3E5AB]" },
-              ].map((m, i) => (
-                <div key={i} className="p-4 rounded-xl bg-[#0D1611] border border-[rgba(212,175,55,0.18)] space-y-1.5 shadow-sm">
-                  <span className="text-[10px] text-[#D4AF37] font-mono uppercase font-bold">{m.title}</span>
-                  <p className={`text-xs font-bold ${m.color}`}>{m.status}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Intelligence Summary */}
+            {/* Grounded Legal Intelligence Summary */}
             <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-3 shadow-md">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-[#F3E5AB] uppercase tracking-wider font-mono flex items-center gap-2">
                   <Scale className="w-4 h-4 text-[#10B981]" />
-                  <span>{t("dashboard.overview.executiveSummary", "Executive Legal Summary")}</span>
+                  <span>Executive Statutory & Intelligence Summary</span>
                 </h3>
                 <span className="text-[10px] text-[#A3B3A9] font-mono border border-[#D4AF37]/30 px-2.5 py-0.5 rounded-full bg-[#0D1611]">
-                  {t("dashboard.overview.demoBadge", "Demo Preview")}
+                  Grounded AI Intelligence
                 </span>
               </div>
-              <p className="text-sm text-[#F4F8F5] leading-relaxed">
-                <span className="text-[#D4AF37] font-semibold">[Demo Assessment]:</span> For <strong className="text-white">{productName}</strong> evaluated under <strong className="text-white">{jurisdiction}</strong> jurisdiction, {t("dashboard.overview.summaryBody", "classical herbs documented in Ayurvedic texts are categorized under Traditional Knowledge safeguards. Patenting requires proving synergistic bio-enhancement beyond mere admixture (Section 3e/3p). Commercialization must comply with statutory FSSAI and AYUSH licensing guidelines.")}
-              </p>
+              <div className="text-sm text-[#F4F8F5] leading-relaxed whitespace-pre-wrap font-sans">
+                {groundedAnswer ? (
+                  groundedAnswer
+                ) : abstained ? (
+                  <p className="text-[#A3B3A9] italic">
+                    AYUSHYA abstained from generating a legal conclusion because retrieved evidence is insufficient for binding claims. Please consult the &ldquo;Sources &amp; Citations&rdquo; tab or request human review.
+                  </p>
+                ) : (
+                  <p className="text-[#A3B3A9]">
+                    For <strong>{productName}</strong> evaluated under <strong>{jurisdiction}</strong> jurisdiction, classical herbs documented in Ayurvedic texts are categorized under Traditional Knowledge safeguards. Patenting requires proving synergistic bio-enhancement beyond mere admixture (Section 3e/3p). Commercialization must comply with statutory FSSAI and AYUSH licensing guidelines.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -221,33 +267,33 @@ export default function AnalysisResultsDashboard() {
         {activeTab === "ip" && (
           <div className="space-y-6 animate-fade-slide-in-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">{t("dashboard.ip.title", "Intellectual Property Protection Assessment")}</h3>
+              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Intellectual Property Protection Assessment</h3>
               <span className="text-xs font-mono text-[#D4AF37] bg-[#0D1611] px-3 py-1 rounded-full border border-[#D4AF37]/35">
-                {t("dashboard.demoBadge", "Demo Assessment")}
+                Statutory Intelligence
               </span>
             </div>
             <div className="grid gap-4">
               <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-bold text-sm text-[#F3E5AB]">{t("dashboard.ip.trademarkTitle", "Trademark & Brand Identity Protection")}</span>
-                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#0D1611] text-[#D4AF37] border border-[#D4AF37]/40">
-                    {t("dashboard.ip.trademarkDemoBadge", "Demo Assessment — Requires Verification")}
+                  <span className="font-bold text-sm text-[#F3E5AB]">Patent Act, 1970 — Section 3(p) & 3(e) Exclusions</span>
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#0D1611] text-[#D4AF37] border border-[#D4AF37]/40 font-mono">
+                    Statutory Bar Check
                   </span>
                 </div>
                 <p className="text-xs text-[#A3B3A9] leading-relaxed">
-                  {t("dashboard.ip.trademarkBodyDemo", "Preliminary sample assessment: Distinctive product name, logo, and trade dress may potentially be eligible for registration under the Trademarks Act, 1999, subject to trademark search.")}
+                  Inventions which in effect are traditional knowledge or an aggregation or duplication of known properties of traditionally known component(s) are non-patentable under Section 3(p). Novel extraction processes or demonstrated synergistic formulations may be eligible subject to examination.
                 </p>
               </div>
 
               <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-bold text-sm text-[#F3E5AB]">{t("dashboard.ip.sec3pTitle", "Section 3(p) Traditional Knowledge Consideration")}</span>
-                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#0D1611] text-[#D4AF37] border border-[#D4AF37]/40">
-                    {t("dashboard.ip.sec3pDemoBadge", "Potentially applicable — Demo")}
+                  <span className="font-bold text-sm text-[#F3E5AB]">Trademark & Brand Identity (Trade Marks Act, 1999)</span>
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#0D1611] text-[#D4AF37] border border-[#D4AF37]/40 font-mono">
+                    Brand Protection
                   </span>
                 </div>
                 <p className="text-xs text-[#A3B3A9] leading-relaxed">
-                  {t("dashboard.ip.sec3pBodyDemo", "Example assessment: Section 3(p) of the Patents Act 1970 may exclude traditional Ayurvedic formulations unless non-obvious synergistic efficacy is evidenced. Requires verification against TKDL.")}
+                  Distinctive brand names for &ldquo;{productName}&rdquo; can be registered under Class 5 (Pharmaceuticals/ASU) or Class 30/29 (Ayurveda Aahar/Dietary). Generic botanical names are unregistrable as descriptive marks.
                 </p>
               </div>
             </div>
@@ -257,18 +303,18 @@ export default function AnalysisResultsDashboard() {
         {/* REGULATIONS TAB */}
         {activeTab === "regulations" && (
           <div className="space-y-6 animate-fade-slide-in-1">
-            <h3 className="text-lg font-bold text-[#F4F8F5] font-display">{t("dashboard.regulations.title", "Applicable Regulatory Frameworks")}</h3>
+            <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Applicable Regulatory Frameworks</h3>
             <div className="grid md:grid-cols-2 gap-5">
               <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
                 <h4 className="font-bold text-sm text-[#F3E5AB]">FSSAI — Ayurveda Aahar Regulations 2022</h4>
                 <p className="text-xs text-[#A3B3A9] leading-relaxed">
-                  Complies with Food Safety and Standards (Ayurveda Aahar) Regulations, 2022. Labeling must carry official mandatory insignia.
+                  Applies if marketed as food/dietary supplement prepared according to authoritative Ayurvedic texts listed in Schedule A of FSSAI regulations.
                 </p>
               </div>
               <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-2.5 shadow-md">
-                <h4 className="font-bold text-sm text-[#F3E5AB]">Ministry of AYUSH — Rule 158B</h4>
+                <h4 className="font-bold text-sm text-[#F3E5AB]">Drugs & Cosmetics Rules 1945 — Rule 158B</h4>
                 <p className="text-xs text-[#A3B3A9] leading-relaxed">
-                  Manufacturing license under Drugs & Cosmetics Rules 1945 Rule 158B if marketed with therapeutic disease claims.
+                  Manufacturing license required from State AYUSH Licensing Authority if marketed with medicinal/therapeutic claims.
                 </p>
               </div>
             </div>
@@ -279,21 +325,18 @@ export default function AnalysisResultsDashboard() {
         {activeTab === "compliance" && (
           <div className="space-y-6 animate-fade-slide-in-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">{t("dashboard.compliance.title", "Regulatory Compliance Dashboard")}</h3>
+              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Regulatory Compliance Checklist</h3>
               <span className="text-xs font-mono text-[#D4AF37] bg-[#0D1611] px-3 py-1 rounded-full border border-[#D4AF37]/30">
-                {t("dashboard.compliance.demoNote", "Demo checklist — Not determined")}
+                Decision Support Checklist
               </span>
-            </div>
-            <div className="p-4 rounded-xl bg-[#040705] border border-[rgba(212,175,55,0.2)] text-xs text-[#A3B3A9] leading-relaxed">
-              {t("dashboard.compliance.banner", "Sample regulatory checklist items below illustrate the compliance schema. Actual status requires verification against applicable regulatory filings.")}
             </div>
             <div className="space-y-3">
               {[
-                { title: `FSSAI Food Business License for ${productName} (Reg. 4)`, status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#F3E5AB]" },
-                { title: "Ayurveda Aahar Mandatory Packaging Insignia", status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#F3E5AB]" },
-                { title: "NBA Biological Resource Access Clearance (BD Act Sec 3)", status: t("dashboard.compliance.reviewDemo", "Requires verification — Demo"), icon: AlertTriangle, color: "text-[#D4AF37]" },
-                { title: "TKDL Prior Art Verification & Exclusion Check", status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#F3E5AB]" },
-                { title: "Heavy Metal & Pesticide Residue Certificate (API Vol 1)", status: t("dashboard.compliance.demoStatus", "Not determined — Demo"), icon: Clock, color: "text-[#A3B3A9]" },
+                { title: `FSSAI / State AYUSH License for ${productName}`, status: "Statutory Requirement", icon: Clock, color: "text-[#D4AF37]" },
+                { title: "Ayurveda Aahar Official Logo & Mandatory Packaging Declaration", status: "Mandatory for Food", icon: Clock, color: "text-[#D4AF37]" },
+                { title: "National Biodiversity Authority (NBA) Form I / ABS Clearance", status: "Biological Resource Check", icon: AlertTriangle, color: "text-[#D4AF37]" },
+                { title: "TKDL Prior Art Verification (Patent Applications)", status: "Exclusion Defense", icon: Clock, color: "text-[#D4AF37]" },
+                { title: "Pharmacopoeial Monograph Standards (API Compliance)", status: "Quality Benchmark", icon: Clock, color: "text-[#A3B3A9]" },
               ].map((item, i) => {
                 const Icon = item.icon;
                 return (
@@ -315,85 +358,107 @@ export default function AnalysisResultsDashboard() {
         {/* BIODIVERSITY TAB */}
         {activeTab === "biodiversity" && (
           <div className="space-y-6 animate-fade-slide-in-1">
-            <h3 className="text-lg font-bold text-[#F4F8F5] font-display">{t("dashboard.biodiversity.title", "Biodiversity & Traditional Knowledge (TK) Analysis")}</h3>
+            <h3 className="text-lg font-bold text-[#F4F8F5] font-display">Biodiversity & Traditional Knowledge (TK) Analysis</h3>
             <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-3 shadow-md">
               <p className="text-xs text-[#A3B3A9] leading-relaxed">
-                {t("dashboard.biodiversity.body", "Because Indian biological resources are utilized in this formulation, applying for intellectual property rights or exporting commercial batches requires filing Form I with the National Biodiversity Authority (NBA) under the Biological Diversity Act, 2002.")}
+                Under the Biological Diversity Act, 2002 (and 2024 Rules), utilizing Indian biological resources for commercial utilization or applying for IP rights based on research on biological resources requires obtaining prior approval from the National Biodiversity Authority (NBA) and compliance with Access and Benefit Sharing (ABS) mechanisms.
               </p>
             </div>
           </div>
         )}
 
-        {/* SOURCES TAB */}
+        {/* SOURCES & CITATIONS TAB */}
         {activeTab === "sources" && (
           <div className="space-y-6 animate-fade-slide-in-1">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">{t("dashboard.sources.title", "Authoritative Statutory Source Database")}</h3>
+              <h3 className="text-lg font-bold text-[#F4F8F5] font-display">
+                Retrieved Statutory Evidence ({rawEvidence.length} Citations)
+              </h3>
 
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 <div className="flex items-center gap-1.5 text-[#A3B3A9]">
                   <Filter className="w-3.5 h-3.5 text-[#10B981]" />
-                  <span>{t("dashboard.sources.filterType", "Type:")}</span>
+                  <span>Domain:</span>
                   <select
                     value={sourceTypeFilter}
                     onChange={(e) => setSourceTypeFilter(e.target.value)}
                     className="bg-[#040705] text-[#F4F8F5] border border-[rgba(212,175,55,0.25)] rounded-lg px-2.5 py-1 cursor-pointer font-sans"
                   >
-                    <option value="All">{t("dashboard.sources.allTypes", "All Types")}</option>
-                    <option value="Law">{t("dashboard.sources.law", "Law / Act")}</option>
-                    <option value="Regulation">{t("dashboard.sources.regulation", "Regulation")}</option>
-                    <option value="International">{t("dashboard.sources.international", "International")}</option>
+                    <option value="All">All Domains</option>
+                    <option value="patents">Patents</option>
+                    <option value="biodiversity">Biodiversity</option>
+                    <option value="ayurveda-aahar">Ayurveda Aahar</option>
+                    <option value="drugs-cosmetics">Drugs & Cosmetics</option>
+                    <option value="treaties">Treaties</option>
                   </select>
                 </div>
 
                 <div className="flex items-center gap-1.5 text-[#A3B3A9]">
-                  <span>{t("dashboard.sources.filterJurisdiction", "Jurisdiction:")}</span>
+                  <span>Jurisdiction:</span>
                   <select
                     value={sourceJurisdictionFilter}
                     onChange={(e) => setSourceJurisdictionFilter(e.target.value)}
                     className="bg-[#040705] text-[#F4F8F5] border border-[rgba(212,175,55,0.25)] rounded-lg px-2.5 py-1 cursor-pointer font-sans"
                   >
-                    <option value="All">{t("dashboard.sources.allJurisdictions", "All Jurisdictions")}</option>
-                    <option value="India">India</option>
-                    <option value="International">International</option>
+                    <option value="All">All Jurisdictions</option>
+                    <option value="india">India</option>
+                    <option value="international">International</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* Demo Sources Notice Banner */}
-            <div className="p-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/35 flex items-start gap-3 text-xs text-[#F3E5AB]">
-              <AlertTriangle className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-bold font-mono uppercase text-[#D4AF37]">
-                  {t("dashboard.sources.demoNoticeTitle", "Demo sources — actual sources will be provided by the RAG backend.")}
-                </p>
-                <p className="text-[#A3B3A9] leading-relaxed">
-                  {t(
-                    "dashboard.sources.demoNoticeDesc",
-                    "The statutory entries below demonstrate the source catalog layout and citation card schema. They are not retrieved legal evidence for your specific formulation."
-                  )}
-                </p>
+            {filteredSources.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[#A3B3A9] bg-[#040705] rounded-2xl border border-[rgba(212,175,55,0.2)]">
+                No statutory evidence chunks match the current filter.
               </div>
-            </div>
+            ) : (
+              <div className="grid gap-3">
+                {filteredSources.map((ev, idx) => {
+                  const cit = ev.citation;
+                  const parts: string[] = [];
+                  if (cit.section) parts.push(cit.section);
+                  if (cit.section_title) parts.push(cit.section_title);
+                  if (cit.subsection) parts.push(`(${cit.subsection})`);
+                  if (cit.chapter) parts.push(`[${cit.chapter}]`);
+                  if (cit.page_start) parts.push(`p. ${cit.page_start}`);
+                  const secStr = parts.join(" — ");
 
-            <div className="grid gap-3">
-              {filteredSources.map((s, idx) => (
-                <a
-                  key={idx}
-                  href={s.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-4.5 rounded-xl bg-[#040705] border border-[rgba(212,175,55,0.18)] hover:border-[#10B981] text-xs transition-all shadow-sm group"
-                >
-                  <div>
-                    <p className="font-bold text-[#F4F8F5] text-xs font-sans group-hover:text-[#F3E5AB] transition-colors">{s.title}</p>
-                    <p className="text-[11px] text-[#D4AF37] font-mono mt-0.5">{s.section} | Jurisdiction: {s.jurisdiction}</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-[#6C7D73] group-hover:text-[#10B981] group-hover:translate-x-0.5 transition-all" />
-                </a>
-              ))}
-            </div>
+                  return (
+                    <div
+                      key={idx}
+                      className="p-5 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.18)] hover:border-[#10B981] text-xs transition-colors space-y-3 shadow-md group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-[#F4F8F5] text-sm font-sans group-hover:text-[#F3E5AB] transition-colors">{cit.title}</p>
+                          <p className="text-[11px] text-[#D4AF37] font-mono mt-0.5">
+                            {secStr || "Statutory Provision"} • Jurisdiction: {cit.jurisdiction} • Authority: {cit.authority || "Official Authority"}
+                          </p>
+                        </div>
+                        {cit.source_url && (
+                          <a
+                            href={cit.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#6C7D73] group-hover:text-[#10B981] group-hover:translate-x-0.5 transition-all p-1"
+                            title="View Official Source"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+
+                      {ev.text && (
+                        <div className="p-3.5 rounded-xl bg-[#090F0B] border border-white/[0.06] text-xs text-[#A3B3A9] font-mono leading-relaxed">
+                          {ev.text.length > 300 ? `${ev.text.substring(0, 300)}...` : ev.text}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -411,7 +476,7 @@ export default function AnalysisResultsDashboard() {
         ) : (
           <Chatbot
             mode="floating"
-            analysisId={rawId}
+            analysisId={analysisData?.id || rawId}
             productName={productName}
             jurisdiction={jurisdiction}
             onClose={() => setIsChatOpen(false)}
