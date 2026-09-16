@@ -57,10 +57,12 @@ from src.features.product_analysis.application.structured_response_parser import
     parse_structured_analysis_response,
 )
 
+from concurrent.futures import ThreadPoolExecutor
+
 # Maximum evidence items passed to the LLM (per approved plan Q2)
 _LLM_EVIDENCE_CAP = 10
 # Max tokens for the product analysis LLM call (per approved plan Q1)
-_PRODUCT_ANALYSIS_MAX_TOKENS = 4000
+_PRODUCT_ANALYSIS_MAX_TOKENS = 1500
 
 
 class ProductAnalysisUseCase:
@@ -126,18 +128,24 @@ class ProductAnalysisUseCase:
         # Map: chunk_id → dimension label (for diversity tracking)
         chunk_dimension_map: Dict[str, str] = {}
 
-        for tq in targeted_queries:
-            retrieval_output = retrieval_uc.execute(
+        def _execute_single_query(tq):
+            return tq, retrieval_uc.execute(
                 query=tq.query_text,
                 top_k=5,
                 jurisdiction=request.jurisdiction,
                 domain=tq.legal_domain,
             )
-            for result in retrieval_output.get("results", []):
-                cid = result.get("chunk_id") or ""
-                if cid not in chunk_dimension_map:
-                    chunk_dimension_map[cid] = tq.dimension
-                all_raw_results.append(result)
+
+        if targeted_queries:
+            with ThreadPoolExecutor(max_workers=min(len(targeted_queries), 6)) as executor:
+                tq_outputs = list(executor.map(_execute_single_query, targeted_queries))
+
+            for tq, retrieval_output in tq_outputs:
+                for result in retrieval_output.get("results", []):
+                    cid = result.get("chunk_id") or ""
+                    if cid not in chunk_dimension_map:
+                        chunk_dimension_map[cid] = tq.dimension
+                    all_raw_results.append(result)
 
         # ── Step 4: Deduplicate by chunk_id (preserve first occurrence) ───
         seen_chunk_ids: Set[str] = set()
@@ -235,7 +243,7 @@ class ProductAnalysisUseCase:
                 user_prompt=user_prompt,
                 max_tokens=_PRODUCT_ANALYSIS_MAX_TOKENS,
                 response_format={"type": "json_object"},
-                timeout_seconds=45,
+                timeout_seconds=25,
             )
         except LLMProviderError as e:
             return {

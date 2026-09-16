@@ -174,9 +174,9 @@ export async function POST(request: Request) {
         PYTHONIOENCODING: 'utf-8',
         PRODUCT_PAYLOAD: JSON.stringify(payload),
         OPENROUTER_API_KEY: apiKey,
-        LLM_MODEL: process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b',
-        LLM_FALLBACK_MODELS: process.env.LLM_FALLBACK_MODELS || '',
-        LLM_TIMEOUT_SECONDS: process.env.LLM_TIMEOUT_SECONDS || '45',
+        LLM_MODEL: process.env.LLM_MODEL || 'mistralai/mistral-small-24b-instruct-2501',
+        LLM_FALLBACK_MODELS: process.env.LLM_FALLBACK_MODELS || 'meta-llama/llama-3.3-70b-instruct,nvidia/nemotron-3-super-120b-a12b',
+        LLM_TIMEOUT_SECONDS: process.env.LLM_TIMEOUT_SECONDS || '25',
       },
     });
 

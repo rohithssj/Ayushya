@@ -124,6 +124,8 @@ class GroundedAnswerUseCase:
             raw_answer = self._get_llm().complete(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
+                max_tokens=800,
+                timeout_seconds=15,
             )
         except LLMProviderError as e:
             # Return a stable application-level error; never leak provider details

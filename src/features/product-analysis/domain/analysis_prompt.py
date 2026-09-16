@@ -26,7 +26,7 @@ from src.features.product_analysis.domain.product_request import ProductAnalysis
 
 # JSON schema injected into the prompt for the LLM to follow exactly
 _RESPONSE_SCHEMA = """{
-  "grounded_summary": "<overall preliminary analysis narrative — 2-4 paragraphs>",
+  "grounded_summary": "<concise preliminary analysis summary — 1-2 paragraphs based strictly on evidence>",
   "classification": {
     "user_selected": "<user's stated classification>",
     "preliminary_assessment": "<evidence-based preliminary note>",
@@ -77,13 +77,14 @@ _RESPONSE_SCHEMA = """{
 }"""
 
 
-def build_product_evidence_block(evidence_items: List[Dict[str, Any]]) -> str:
+def build_product_evidence_block(evidence_items: List[Dict[str, Any]], max_text_len: int = 1500) -> str:
     """
     Format the evidence items (selected and capped to LLM limit) into
     a structured context block for the LLM.
 
     Only includes fields that exist in actual chunk metadata.
     Does not fabricate any field value.
+    Cleanly bounds text length per evidence item to avoid excessive prompt overhead.
     """
     if not evidence_items:
         return "No evidence available."
@@ -92,6 +93,8 @@ def build_product_evidence_block(evidence_items: List[Dict[str, Any]]) -> str:
     for i, ev in enumerate(evidence_items, 1):
         cit: Dict[str, Any] = ev.get("citation", {})
         text: str = ev.get("text", "").strip()
+        if len(text) > max_text_len:
+            text = text[:max_text_len] + "..."
 
         lines.append(f"--- EVIDENCE {i} ---")
         lines.append(f"citation_id: {cit.get('citation_id', '')}")

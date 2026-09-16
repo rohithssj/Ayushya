@@ -16,7 +16,7 @@ from src.features.rag.application.run_rag_evaluation_use_case import RunRAGEvalu
 
 class MockLLMProvider:
     """Deterministic mock LLM provider for evaluation suite tests."""
-    def complete(self, system_prompt: str, user_prompt: str) -> str:
+    def complete(self, system_prompt: str, user_prompt: str, **kwargs: Any) -> str:
         # Extract citation ID from user prompt if available
         import re
         cids = re.findall(r"citation_id:\s*(cit_[a-f0-9]+)", user_prompt)

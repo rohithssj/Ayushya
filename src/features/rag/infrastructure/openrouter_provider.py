@@ -91,7 +91,7 @@ class OpenRouterProvider:
         timeout: Optional[int] = None,
     ) -> None:
         self._api_key = api_key or os.environ.get("OPENROUTER_API_KEY", "").strip()
-        self._model = model or os.environ.get("LLM_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
+        self._model = model or os.environ.get("LLM_MODEL", "mistralai/mistral-small-24b-instruct-2501").strip()
 
         if fallback_models is not None:
             self._fallback_models = fallback_models
