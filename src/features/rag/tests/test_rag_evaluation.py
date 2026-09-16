@@ -202,10 +202,10 @@ class TestFullDatasetEvaluationSuite(unittest.TestCase):
 
         report = use_case.execute(top_k=5)
 
-        self.assertEqual(report.total_cases, 18)
+        self.assertEqual(report.total_cases, 23)
         self.assertGreaterEqual(report.total_cases, 15)
         # Ensure all cases produced a valid result record
-        self.assertEqual(len(report.test_results), 18)
+        self.assertEqual(len(report.test_results), 23)
         self.assertIsInstance(report.pass_rate_pct, float)
         self.assertEqual(report.citation_failures, 0)
         self.assertEqual(report.grounding_failures, 0)

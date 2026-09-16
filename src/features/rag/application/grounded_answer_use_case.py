@@ -70,21 +70,28 @@ class GroundedAnswerUseCase:
         domain: Optional[str] = None,
         top_k: int = 5,
         request_id: Optional[str] = None,
+        target_language: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Full pipeline: retrieval → evidence → LLM gate → grounded answer.
+        Full pipeline: query normalization → retrieval → evidence → LLM gate → grounded answer → translation.
 
         Returns a dict compatible with the /api/chat route.
         """
         if not request_id:
             request_id = f"req_{uuid.uuid4().hex[:12]}"
 
+        # ── Step 0: Language detection & Query normalization ──
+        from src.features.rag.domain.multilingual import QueryNormalizer, ResponseLocalizer
+        normalized_query, detected_lang = QueryNormalizer.normalize_query(query)
+        user_lang = target_language if target_language in ("en", "hi", "te") else detected_lang
+
         # ── Step 1: Retrieve + evaluate evidence ──
         retrieval_output = self._retrieval.execute(
-            query=query,
+            query=normalized_query,
             top_k=top_k,
             jurisdiction=jurisdiction,
             domain=domain,
+            original_query=query,
         )
 
         # ── Step 2: Evidence selection + citation construction ──
@@ -103,6 +110,11 @@ class GroundedAnswerUseCase:
                 reasons[0] if reasons
                 else "Insufficient authoritative evidence found for this query."
             )
+            # Translate abstention reason if target language is Hindi or Telugu
+            if user_lang != "en" and self._llm:
+                localizer = ResponseLocalizer(self._llm)
+                abstention_reason = localizer.localize_answer(abstention_reason, user_lang)
+
             resp = AbstentionResponse(
                 request_id=request_id,
                 query=query,
@@ -113,11 +125,12 @@ class GroundedAnswerUseCase:
             result = resp.to_dict()
             result["evidence"] = retrieval_output.get("evidence", {"selected": [], "count": 0})
             result["evidence_assessment"] = assessment
+            result["language"] = user_lang
             return result
 
         # ── Step 4: Build prompt from selected evidence only ──
         evidence_block = build_evidence_block(selected_evidence)
-        system_prompt, user_prompt = build_grounding_prompt(query, evidence_block)
+        system_prompt, user_prompt = build_grounding_prompt(normalized_query, evidence_block)
 
         # ── Step 5: Call LLM ──
         try:
@@ -142,6 +155,7 @@ class GroundedAnswerUseCase:
                 "evidence_assessment": assessment,
                 "error": "llm_provider_error",
                 "error_message": str(e),
+                "language": user_lang,
             }
 
         # ── Step 6: Citation validation ──
@@ -152,11 +166,17 @@ class GroundedAnswerUseCase:
         }
         validated_citations = extract_citation_ids(raw_answer, valid_citation_ids)
 
+        # ── Step 6b: Localize answer to target language if needed ──
+        final_answer = raw_answer
+        if user_lang != "en":
+            localizer = ResponseLocalizer(self._get_llm())
+            final_answer = localizer.localize_answer(raw_answer, user_lang)
+
         # ── Step 7: Return GroundedAnswer ──
         grounded = GroundedAnswer(
             request_id=request_id,
             query=query,
-            answer=raw_answer,
+            answer=final_answer,
             abstained=False,
             abstention_reason=None,
             evidence_strength=strength,
@@ -166,4 +186,5 @@ class GroundedAnswerUseCase:
         result = grounded.to_dict()
         result["evidence"] = retrieval_output.get("evidence", {"selected": [], "count": 0})
         result["evidence_assessment"] = assessment
+        result["language"] = user_lang
         return result

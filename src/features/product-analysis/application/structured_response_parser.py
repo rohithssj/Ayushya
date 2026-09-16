@@ -374,14 +374,6 @@ def _validate_compliance_checklist(
         if priority not in _VALID_PRIORITIES:
             priority = "medium"
 
-        entry: Dict[str, Any] = {
-            "action": action,
-            "reason": reason,
-            "legal_area": legal_area,
-            "priority": priority,
-            "requires_verification": True,
-        }
-
         # Checklist items must be traceable to supplied evidence.
         cid_raw = item.get("supporting_citation_id")
         if cid_raw is None:
@@ -392,7 +384,21 @@ def _validate_compliance_checklist(
         cid = _validate_single_citation_id(cid_raw, valid_citation_ids)
         if not cid:
             continue
-        entry["supporting_citation_id"] = cid
+
+        # Filter out State / National Authority obligations from product compliance checklist
+        from src.features.product_analysis.domain.obligation_subject import classify_obligation_subject, ObligationSubject
+        subj = classify_obligation_subject(action + " " + reason)
+        if subj in (ObligationSubject.STATE, ObligationSubject.NATIONAL_AUTHORITY):
+            continue
+
+        entry: Dict[str, Any] = {
+            "action": action,
+            "reason": reason,
+            "legal_area": legal_area,
+            "priority": priority,
+            "requires_verification": True,
+            "supporting_citation_id": cid,
+        }
 
         result.append(entry)
 

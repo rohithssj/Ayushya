@@ -119,7 +119,7 @@ class DomainRouter:
         form_lower = request.product_form.lower()
         product_name_lower = request.product_name.lower()
 
-        # ── 1. Product classification (target user's selected class) ───────
+        # ── 1. Product classification (target user's selected class & dosage forms) ───────
         if any(k in cls_lower for k in ("aahar", "food", "nutraceutical", "dietary")):
             dimensions.append(
                 AnalysisDimension(
@@ -131,6 +131,18 @@ class DomainRouter:
                     ),
                 )
             )
+            # Also route to drugs-cosmetics if dosage form (tablet, capsule) or medicinal context is present
+            if any(k in form_lower for k in ("tablet", "capsule", "syrup", "churna")) or "medicine" in desc_lower:
+                dimensions.append(
+                    AnalysisDimension(
+                        dimension="regulatory_drugs_cosmetics",
+                        legal_domain="drugs-cosmetics",
+                        why_relevant=(
+                            "Formulation dosage form (tablet/capsule) or description may also engage "
+                            "Drugs and Cosmetics Act classification provisions alongside Ayurveda-Aahar."
+                        ),
+                    )
+                )
         elif any(
             k in cls_lower
             for k in ("proprietary", "classical", "asu", "medicine", "phyto", "cosmetic")
@@ -145,6 +157,17 @@ class DomainRouter:
                     ),
                 )
             )
+            # Also route to ayurveda-aahar if botanical ingredients could fall under food supplements
+            if "aahar" in desc_lower or "food" in desc_lower or "supplement" in desc_lower:
+                dimensions.append(
+                    AnalysisDimension(
+                        dimension="regulatory_ayurveda_aahar",
+                        legal_domain="ayurveda-aahar",
+                        why_relevant=(
+                            "Product formulation description references food supplement or Aahar concepts."
+                        ),
+                    )
+                )
 
         # ── 2. Patent IP (always) ──────────────────────────────────────────
         dimensions.append(
@@ -158,61 +181,6 @@ class DomainRouter:
                 ),
             )
         )
-
-        # ── 3. Regulatory — AYUSH / Drugs & Cosmetics ─────────────────────
-        if any(
-            k in cls_lower
-            for k in ("proprietary", "classical", "asu", "medicine", "phyto")
-        ):
-            dimensions.append(
-                AnalysisDimension(
-                    dimension="regulatory_drugs_cosmetics",
-                    legal_domain="drugs-cosmetics",
-                    why_relevant=(
-                        "Product classification as a medicine or phytopharmaceutical "
-                        "may engage the Drugs and Cosmetics Act regulatory framework."
-                    ),
-                )
-            )
-        elif "cosmetic" in cls_lower or "cream" in form_lower or "oil" in form_lower:
-            dimensions.append(
-                AnalysisDimension(
-                    dimension="regulatory_drugs_cosmetics",
-                    legal_domain="drugs-cosmetics",
-                    why_relevant=(
-                        "A cosmetic or topical product form may engage the Drugs and "
-                        "Cosmetics Act (Schedule S / Cosmetics Rules) framework."
-                    ),
-                )
-            )
-
-        # ── 4. Regulatory — Ayurveda-Aahar / FSSAI ────────────────────────
-        if any(k in cls_lower for k in ("aahar", "food", "nutraceutical", "dietary")):
-            dimensions.append(
-                AnalysisDimension(
-                    dimension="regulatory_ayurveda_aahar",
-                    legal_domain="ayurveda-aahar",
-                    why_relevant=(
-                        "A product classified as Ayurveda-Aahar or a food supplement "
-                        "may be subject to FSSAI Ayurveda Aahar regulations."
-                    ),
-                )
-            )
-        # Also add if not already captured and classification is ambiguous
-        if not any(d.legal_domain == "ayurveda-aahar" for d in dimensions) and not any(
-            d.legal_domain == "drugs-cosmetics" for d in dimensions
-        ):
-            dimensions.append(
-                AnalysisDimension(
-                    dimension="regulatory_ayurveda_aahar",
-                    legal_domain="ayurveda-aahar",
-                    why_relevant=(
-                        "Ayurveda-Aahar regulatory framework may apply depending on "
-                        "how the product is marketed and whether it relies on "
-                        "authoritative Ayurvedic text references."
-                    ),
-                )
-            )
 
         # ── 4b. Compliance Checklist ──────────────────────────────────────
         compliance_domain = (

@@ -26,7 +26,7 @@ def _raw(**overrides):
 
 class TestDomainRoutingAndQueries(unittest.TestCase):
     def test_ayurveda_aahar_routes_to_relevant_domains_only(self):
-        request = validate_product_request(_raw())
+        request = validate_product_request(_raw(form="Powder"))
         dimensions = DomainRouter().route(request)
         domains = [d.legal_domain for d in dimensions]
 

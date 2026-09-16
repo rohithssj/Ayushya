@@ -14,6 +14,7 @@ class EvidenceEvaluator:
         query: str,
         jurisdiction: Optional[str] = None,
         domain: Optional[str] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Deterministically evaluates evidence strength, abstention recommendation,
@@ -58,8 +59,19 @@ class EvidenceEvaluator:
             else:
                 filter_mismatches += 1
 
-        if not aligned_items:
-            reasons.append("No retrieval results aligned with the requested jurisdiction and domain filters.")
+        # Check for explicit country/out-of-corpus domain intent
+        unsupported_countries = {"us", "usa", "united states", "uk", "united kingdom", "germany", "japan", "australia", "canada", "norway", "railway", "train", "tatkal"}
+        search_text = f"{query} {kwargs.get('original_query', '')}".lower()
+        query_words = set(re.findall(r"\b[a-z]+\b", search_text))
+        matched_unsupported = query_words.intersection(unsupported_countries)
+
+        if matched_unsupported:
+            reason_msg = (
+                f"I can explain the international framework, but I do not currently have sufficient "
+                f"authoritative country-specific evidence for '{', '.join(sorted(matched_unsupported)).upper()}' "
+                f"to provide a reliable domestic-law conclusion."
+            )
+            reasons.append(reason_msg)
             return {
                 "strength": "insufficient",
                 "abstention_recommended": True,

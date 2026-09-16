@@ -105,6 +105,7 @@ class ProductAnalysisUseCase:
         self,
         request: ProductAnalysisRequest,
         analysis_id: Optional[str] = None,
+        target_language: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Run the full product analysis pipeline.
@@ -113,6 +114,18 @@ class ProductAnalysisUseCase:
         """
         if not analysis_id:
             analysis_id = f"analysis_{uuid.uuid4().hex[:12]}"
+
+        from src.features.rag.domain.multilingual import QueryNormalizer, ResponseLocalizer, LanguageDetector
+
+        # Detect input language or use explicit target_language
+        detected_lang = LanguageDetector.detect_language(
+            f"{request.product_name} {request.description}"
+        )
+        user_lang = target_language if target_language in ("en", "hi", "te") else detected_lang
+
+        # Normalize product description for English retrieval
+        norm_desc, _ = QueryNormalizer.normalize_query(request.description)
+        norm_name, _ = QueryNormalizer.normalize_query(request.product_name)
 
         retrieval_uc = self._make_retrieval_use_case()
 
@@ -254,7 +267,7 @@ class ProductAnalysisUseCase:
                 "abstained": False,
                 "abstention_reason": None,
                 "grounded_summary": None,
-                "evidence_strength": strength,
+                "evidence_strength": "moderate" if strength == "strong" else strength,
                 "requires_human_review": True,
                 "citations": [],
                 "evidence": full_selection_output.get("evidence", {"selected": [], "count": 0}),
@@ -277,7 +290,12 @@ class ProductAnalysisUseCase:
             strength = "insufficient"
             requires_human_review = True
 
-        # ── Step 13: Build domain model objects from parsed data ───────────
+        # ── Step 13: Localize grounded summary if target language is Hindi or Telugu ──
+        if user_lang != "en" and grounded_summary:
+            localizer = ResponseLocalizer(self._get_llm())
+            grounded_summary = localizer.localize_answer(grounded_summary, user_lang)
+
+        # ── Step 14: Return ProductAnalysisResult ─────────────────────────
         classification = _build_classification(
             parsed.get("classification"),
             request.user_selected_classification,
@@ -291,6 +309,21 @@ class ProductAnalysisUseCase:
         compliance_checklist = _build_compliance_checklist(
             parsed.get("compliance_checklist", [])
         )
+
+        # Cap overall evidence strength to 'moderate' if major dimensions (e.g. classification or IP) are insufficient
+        dim_strengths = [
+            classification.evidence_strength if classification else "insufficient",
+            *(ip.evidence_strength for ip in ip_assessment),
+            *(reg.evidence_strength for reg in regulatory_assessment),
+            tk_biodiversity.evidence_strength if tk_biodiversity else "insufficient",
+        ]
+        if not ip_assessment:
+            dim_strengths.append("insufficient")
+        if not regulatory_assessment:
+            dim_strengths.append("insufficient")
+
+        if "insufficient" in dim_strengths and strength == "strong":
+            strength = "moderate"
 
         # ── Step 14: Return ProductAnalysisResult ─────────────────────────
         result = ProductAnalysisResult(
