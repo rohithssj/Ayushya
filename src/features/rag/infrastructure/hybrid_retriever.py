@@ -78,8 +78,20 @@ class HybridRetriever:
                 1.0 / (self.rrf_k + emb_rank)
             )
             
-            # Apply penalties/boosts based on text quality
-            final_score = rrf_score * self._text_quality_multiplier(chunk)
+            # Apply penalties/boosts based on text quality and domain match
+            multiplier = self._text_quality_multiplier(chunk)
+            
+            # Domain relevance boost: If explicit domain target is set, boost matching chunks
+            chunk_domain = str(chunk.get("domain") or (chunk.get("metadata") or {}).get("domain") or "").strip().lower()
+            if domain and domain.strip():
+                tgt_dom = domain.strip().lower()
+                if chunk_domain and (chunk_domain == tgt_dom or (tgt_dom in ("patents", "ip") and chunk_domain in ("patents", "ip"))):
+                    multiplier *= 1.3
+                elif chunk_domain and chunk_domain != tgt_dom and chunk_domain in ("geographical_indications", "drugs_cosmetics"):
+                    # Down-rank irrelevant high-frequency legal provisions when targeted domain is patents
+                    multiplier *= 0.5
+
+            final_score = rrf_score * multiplier
             
             scored_results.append(
                 HybridRetrievalResult(
@@ -95,6 +107,7 @@ class HybridRetriever:
         scored_results.sort(key=lambda x: (-x.hybrid_score, x.chunk.get("chunk_id", "")))
         
         return scored_results[:top_k]
+
 
     @staticmethod
     def _text_quality_multiplier(chunk: Dict[str, Any]) -> float:

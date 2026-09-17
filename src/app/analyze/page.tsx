@@ -27,9 +27,17 @@ export default function AnalyzeProductPage() {
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>("India");
   const [productName, setProductName] = useState("Ashwagandha Wellness Tablet");
   const [form, setForm] = useState("Tablet");
-  const [category, setCategory] = useState("Ayurveda-Aahar");
-  const [description, setDescription] = useState(
-    "Standardized extract formulation targeted for stress reduction and immunity enhancement using traditional processing methods."
+  const [category, setCategory] = useState("No preference — let AYUSHYA assess");
+  const [intendedUse, setIntendedUse] = useState(
+    "Daily wellness product for general immune and stress support."
+  );
+  const [productClaims, setProductClaims] = useState("Supports immunity, stress management, digestion and wellness.");
+  const [diseaseClaimFlag, setDiseaseClaimFlag] = useState(false);
+  const [diseaseClaimText, setDiseaseClaimText] = useState("");
+  const [isClassicalBasis, setIsClassicalBasis] = useState<"yes" | "no" | "unknown">("unknown");
+  const [classicalReference, setClassicalReference] = useState("");
+  const [manufacturingProcessing, setManufacturingProcessing] = useState(
+    "Extracts processed and blended into tablets in India."
   );
 
   const [ingredients, setIngredients] = useState<IngredientInput[]>([
@@ -74,8 +82,16 @@ export default function AnalyzeProductPage() {
       const result = await submitProductAnalysis({
         productName: productName.trim(),
         category,
+        proposed_classification: category,
         form,
-        description: description.trim(),
+        intended_use: intendedUse.trim(),
+        description: intendedUse.trim(),
+        product_claims: productClaims.trim(),
+        disease_claim_flag: diseaseClaimFlag,
+        disease_claim_text: diseaseClaimText.trim(),
+        is_classical_basis: isClassicalBasis,
+        classical_reference: classicalReference.trim() || undefined,
+        manufacturing_processing: manufacturingProcessing.trim(),
         ingredients: ingredients.filter((i) => i.name.trim().length > 0),
         jurisdiction,
       });
@@ -165,7 +181,7 @@ export default function AnalyzeProductPage() {
           <div className="grid sm:grid-cols-2 gap-5">
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[#A3B3A9]">
-                {t("analyze.productNameLabel", "Product Name")}
+                Product Name <span className="text-[#10B981]">*</span>
               </label>
               <input
                 type="text"
@@ -173,13 +189,13 @@ export default function AnalyzeProductPage() {
                 onChange={(e) => setProductName(e.target.value)}
                 required
                 className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none transition-all font-sans"
-                placeholder={t("analyze.productNamePlaceholder", "e.g. Ashwagandha Wellness Tablet")}
+                placeholder="e.g. Ashwagandha Wellness Tablet"
               />
             </div>
 
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[#A3B3A9]">
-                {t("analyze.productFormLabel", "Product Form")}
+                Product Form <span className="text-[#10B981]">*</span>
               </label>
               <select
                 value={form}
@@ -191,39 +207,133 @@ export default function AnalyzeProductPage() {
                 <option value="Syrup / Churna">Syrup / Churna</option>
                 <option value="Oil / Taila">Oil / Taila</option>
                 <option value="Cosmetic Cream">Cosmetic Cream</option>
+                <option value="Powder">Powder</option>
+                <option value="Other">Other</option>
               </select>
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-[#A3B3A9]">
-              {t("analyze.categoryLabel", "Target Classification Category")}
+              Intended Use <span className="text-[#10B981]">*</span>
             </label>
+            <textarea
+              rows={2}
+              value={intendedUse}
+              onChange={(e) => setIntendedUse(e.target.value)}
+              required
+              className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none transition-all font-sans"
+              placeholder="e.g. Daily wellness product for general immune and stress support."
+            />
+          </div>
+
+          {/* Proposed Classification Dropdown (Optional) */}
+          <div className="space-y-2 pt-2 border-t border-white/[0.05]">
+            <label className="block text-xs font-semibold text-[#F3E5AB]">
+              Proposed Classification (Optional)
+            </label>
+            <p className="text-[11px] text-[#A3B3A9] leading-tight">
+              Optional: select the classification you currently believe may apply. AYUSHYA will independently assess it against the product facts and retrieved evidence.
+            </p>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] focus:outline-none transition-all cursor-pointer font-sans"
             >
-              <option value="Ayurveda-Aahar">Ayurveda-Aahar (FSSAI Regulations 2022)</option>
-              <option value="Proprietary ASU Medicine">Proprietary ASU Medicine (Drugs & Cosmetics Act)</option>
-              <option value="Classical Formulation">Classical Formulation (Authoritative Ayurvedic Texts)</option>
-              <option value="Phytopharmaceutical">Phytopharmaceutical (Standardized Extracts)</option>
-              <option value="Ayurvedic Cosmetic">Ayurvedic Cosmetic (Schedule S / Cosmetics Rules)</option>
+              <option value="No preference — let AYUSHYA assess">No preference — let AYUSHYA assess</option>
+              <option value="Ayurveda-Aahar">Ayurveda-Aahar</option>
+              <option value="Ayurvedic Drug / Medicine">Ayurvedic Drug / Medicine</option>
+              <option value="Classical Ayurvedic Formulation">Classical Ayurvedic Formulation</option>
+              <option value="Proprietary Ayurvedic Formulation">Proprietary Ayurvedic Formulation</option>
+              <option value="Phytopharmaceutical">Phytopharmaceutical</option>
+              <option value="Ayurvedic Cosmetic">Ayurvedic Cosmetic</option>
+              <option value="Other / Not sure">Other / Not sure</option>
             </select>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-[#A3B3A9]">
-              {t("analyze.descriptionLabel", "Product Description & Processing Method")}
-            </label>
-            <textarea
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              className="w-full bg-[#050806] border border-[rgba(212,175,55,0.2)] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/25 rounded-xl px-4 py-3 text-sm text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none transition-all font-sans"
-              placeholder={t("analyze.descriptionPlaceholder", "Describe processing method, intended use, solvent extraction ratios...")}
-            />
+          {/* Optional Classification Signals Grid */}
+          <div className="pt-3 space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#A3B3A9]">
+                  Product Claims (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={productClaims}
+                  onChange={(e) => setProductClaims(e.target.value)}
+                  className="w-full bg-[#050806] border border-[rgba(212,175,55,0.18)] focus:border-[#10B981] rounded-xl px-3.5 py-2.5 text-xs text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none"
+                  placeholder="e.g. Supports immunity and digestion."
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#A3B3A9]">
+                  Classical / Traditional Basis (Optional)
+                </label>
+                <select
+                  value={isClassicalBasis}
+                  onChange={(e) => setIsClassicalBasis(e.target.value as "yes" | "no" | "unknown")}
+                  className="w-full bg-[#050806] border border-[rgba(212,175,55,0.18)] focus:border-[#10B981] rounded-xl px-3.5 py-2.5 text-xs text-[#F4F8F5] focus:outline-none cursor-pointer"
+                >
+                  <option value="unknown">Unknown / Not Specified</option>
+                  <option value="yes">Yes — Based on Classical Ayurvedic Text</option>
+                  <option value="no">No — Novel / Commercial Proprietary Blend</option>
+                </select>
+              </div>
+            </div>
+
+            {isClassicalBasis === "yes" && (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#A3B3A9]">
+                  Classical Reference / Source (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={classicalReference}
+                  onChange={(e) => setClassicalReference(e.target.value)}
+                  className="w-full bg-[#050806] border border-[rgba(212,175,55,0.18)] focus:border-[#10B981] rounded-xl px-3.5 py-2.5 text-xs text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none"
+                  placeholder="e.g. Sahasrayogam / Charaka Samhita / Ayurvedic Formulary of India"
+                />
+              </div>
+            )}
+
+            {/* Disease Claim Flag */}
+            <div className="p-3.5 rounded-xl bg-[#050806] border border-[rgba(212,175,55,0.18)] space-y-2">
+              <label className="flex items-center gap-2.5 text-xs text-[#F4F8F5] font-semibold cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={diseaseClaimFlag}
+                  onChange={(e) => setDiseaseClaimFlag(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-700 bg-black text-[#10B981] focus:ring-[#10B981]"
+                />
+                <span>Does the product claim to prevent, treat, cure, or mitigate a disease?</span>
+              </label>
+              {diseaseClaimFlag && (
+                <div className="pt-2">
+                  <input
+                    type="text"
+                    value={diseaseClaimText}
+                    onChange={(e) => setDiseaseClaimText(e.target.value)}
+                    className="w-full bg-[#090F0B] border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none"
+                    placeholder="Provide exact claim text (e.g., Prevents and helps treat diabetes and arthritis)"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-[#A3B3A9]">
+                Manufacturing / Processing (Optional)
+              </label>
+              <input
+                type="text"
+                value={manufacturingProcessing}
+                onChange={(e) => setManufacturingProcessing(e.target.value)}
+                className="w-full bg-[#050806] border border-[rgba(212,175,55,0.18)] focus:border-[#10B981] rounded-xl px-3.5 py-2.5 text-xs text-[#F4F8F5] placeholder-[#6C7D73] focus:outline-none"
+                placeholder="Describe extraction ratio, concentration, fermentation, standardization, or solvent processing..."
+              />
+            </div>
           </div>
         </div>
 

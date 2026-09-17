@@ -86,235 +86,229 @@ class DomainRouter:
     Routes a ProductAnalysisRequest to the set of AnalysisDimensions
     that should be queried for a complete multi-domain analysis.
 
-    Routing logic:
-    1. Product classification — included for the user's selected product class.
-    2. Patents + traditional knowledge — always included (patentability
-       and TK exclusions are relevant to any novel formulation).
-    3. Trademarks — always included (brand protection is relevant to any
-       commercial product).
-    4. Regulatory (AYUSH / drugs-cosmetics / ayurveda-aahar) — included
-       based on the user-selected classification.
-    5. Biodiversity / ABS — included if ingredients suggest use of Indian
-       biological resources (keyword-based signal, not a legal determination).
-    6. Copyright/design — included only when product attributes suggest packaging,
-       label, artistic, visual, or appearance-protection questions.
-    7. International treaties (CBD, TRIPS, Nagoya) — included only when
-       jurisdiction = 'international'.
-    8. GI — included if product references a traditional regional preparation.
+    Fact-Driven Routing Logic (Independent of User Hypothesis):
+    1. Product Classification & Regulatory Frameworks:
+       - Evaluates intended_use, product_claims, disease_claim_flag, product_form, classical basis, processing.
+       - Disease claims ("treat", "cure", "prevent", "mitigate", "diabetes", etc.) or disease_claim_flag=True:
+         always routes to 'drugs-cosmetics' (Drugs and Cosmetics Act + Magic Remedies Act) for claim sensitivity evaluation.
+       - Oral botanical wellness / dietary supplements: routes to both 'ayurveda-aahar' AND 'drugs-cosmetics'
+         to evaluate potential overlap / boundary rules.
+       - Topical / Cosmetic forms (cream, cosmetic oil, skin/hair care intended use): routes to 'drugs-cosmetics' (Cosmetics Rules).
+       - User hypothesis (if not 'no_preference'): added as an extra verification target, NEVER restricting fact-driven routing.
+    2. Patents + Traditional Knowledge: always included (Section 3 exclusions, TKDL, inventive step).
+    3. Compliance Checklist: routes across applicable regulatory domains.
+    4. Biodiversity / ABS: triggered by botanical ingredients or classical processing context.
+    5. Trademarks, GI, Designs, Copyright, International Treaties as applicable.
     """
 
     def route(self, request: ProductAnalysisRequest) -> List[AnalysisDimension]:
-        """
-        Return the list of AnalysisDimensions relevant for this product.
-
-        Dimensions are returned in logical analysis order:
-        classification → regulatory → patents → trademarks → TK/biodiversity
-        → international (if applicable).
-        """
         dimensions: List[AnalysisDimension] = []
 
-        cls_lower = request.user_selected_classification.lower()
+        cls_lower = (request.user_selected_classification or "").lower()
         jur = request.jurisdiction.lower()
-        desc_lower = request.description.lower()
-        form_lower = request.product_form.lower()
-        product_name_lower = request.product_name.lower()
+        desc_lower = (request.description or "").lower()
+        intended_lower = (request.intended_use or "").lower()
+        claims_lower = (request.product_claims or "").lower()
+        disease_text_lower = (request.disease_claim_text or "").lower()
+        form_lower = (request.product_form or "").lower()
+        product_name_lower = (request.product_name or "").lower()
 
-        # ── 1. Product classification (target user's selected class & dosage forms) ───────
-        if any(k in cls_lower for k in ("aahar", "food", "nutraceutical", "dietary")):
+        combined_context = " ".join([
+            desc_lower, intended_lower, claims_lower, disease_text_lower, product_name_lower
+        ])
+
+        # ── Disease Claim Detection Signal ─────────────────────────────
+        disease_keywords = (
+            "treat", "cure", "prevent", "mitigate", "diabetes", "arthritis",
+            "cancer", "disease", "disorder", "infection", "therapeutic", "healing",
+            "remedy", "hypertension", "ulcer", "asthma"
+        )
+        has_disease_claim = (
+            request.disease_claim_flag or
+            any(k in combined_context for k in disease_keywords)
+        )
+
+        # ── 1. Fact-Driven Classification & Regulatory Domain Routing ───
+
+        # Food / Ayurveda-Aahar Signal: wellness, dietary, food, immunity, stress support, oral supplement
+        has_aahar_signal = (
+            any(k in combined_context for k in ("wellness", "immune", "immunity", "stress", "digestion", "food", "aahar", "dietary", "supplement", "general health")) or
+            any(k in cls_lower for k in ("aahar", "food", "nutraceutical", "dietary")) or
+            cls_lower in ("no_preference", "no preference — let ayushya assess")
+        )
+
+        # Drug / ASU Medicine Signal: disease claims, therapeutic intent, drug keywords, or dosage form (tablet/capsule)
+        has_drug_signal = (
+            has_disease_claim or
+            any(k in form_lower for k in ("tablet", "capsule", "pill", "syrup", "injection")) or
+            any(k in combined_context for k in ("medicine", "asu", "drug", "phytopharmaceutical", "therapeutic")) or
+            any(k in cls_lower for k in ("drug", "medicine", "proprietary", "phytopharmaceutical"))
+        )
+
+        # Cosmetic Signal: topical form (cream, oil), cosmetic intended use (skin, hair, beauty, cleansing)
+        has_cosmetic_signal = (
+            any(k in form_lower for k in ("cream", "lotion", "gel", "paste")) or
+            any(k in combined_context for k in ("skin", "hair", "beauty", "cosmetic", "cleansing", "topical")) or
+            "cosmetic" in cls_lower
+        )
+
+        # Route to Ayurveda-Aahar domain if food/supplement/wellness signals exist or unconstrained
+        if has_aahar_signal or (not has_cosmetic_signal and not has_disease_claim):
             dimensions.append(
                 AnalysisDimension(
                     dimension="product_classification",
                     legal_domain="ayurveda-aahar",
                     why_relevant=(
-                        "The user's selected classification references Ayurveda-Aahar, "
-                        "food, nutraceutical, or dietary-product concepts."
+                        "Product intended use, wellness claims, or formulation facts trigger consideration "
+                        "of the Ayurveda-Aahar regulatory framework (FSSAI Regulations, 2022)."
                     ),
                 )
             )
-            # Also route to drugs-cosmetics if dosage form (tablet, capsule) or medicinal context is present
-            if any(k in form_lower for k in ("tablet", "capsule", "syrup", "churna")) or "medicine" in desc_lower:
-                dimensions.append(
-                    AnalysisDimension(
-                        dimension="regulatory_drugs_cosmetics",
-                        legal_domain="drugs-cosmetics",
-                        why_relevant=(
-                            "Formulation dosage form (tablet/capsule) or description may also engage "
-                            "Drugs and Cosmetics Act classification provisions alongside Ayurveda-Aahar."
-                        ),
-                    )
-                )
-        elif any(
-            k in cls_lower
-            for k in ("proprietary", "classical", "asu", "medicine", "phyto", "cosmetic")
-        ) or "cream" in form_lower or "oil" in form_lower:
+
+        # Route to Drugs & Cosmetics domain if drug signals, disease claims, ASU, or cosmetic signals exist
+        if has_drug_signal or has_cosmetic_signal or has_disease_claim or cls_lower in ("no_preference", "no preference — let ayushya assess"):
             dimensions.append(
                 AnalysisDimension(
-                    dimension="product_classification",
+                    dimension="regulatory_drugs_cosmetics",
                     legal_domain="drugs-cosmetics",
                     why_relevant=(
-                        "The user's selected classification or product form references "
-                        "medicine, ASU, phytopharmaceutical, or cosmetic concepts."
+                        "Product attributes (disease/health claims, dosage form, classical/proprietary context, "
+                        "or cosmetic intended use) trigger evaluation under the Drugs and Cosmetics Act, 1940 "
+                        "and Drugs and Magic Remedies Act, 1954."
                     ),
                 )
             )
-            # Also route to ayurveda-aahar if botanical ingredients could fall under food supplements
-            if "aahar" in desc_lower or "food" in desc_lower or "supplement" in desc_lower:
+
+        # If user specified a specific proposed classification (hypothesis), add user hypothesis verification target
+        if cls_lower and cls_lower not in ("no_preference", "no preference — let ayushya assess", "other", "other / not sure"):
+            target_domain = "ayurveda-aahar" if any(k in cls_lower for k in ("aahar", "food", "nutraceutical")) else "drugs-cosmetics"
+            if not any(d.legal_domain == target_domain for d in dimensions):
                 dimensions.append(
                     AnalysisDimension(
-                        dimension="regulatory_ayurveda_aahar",
-                        legal_domain="ayurveda-aahar",
-                        why_relevant=(
-                            "Product formulation description references food supplement or Aahar concepts."
-                        ),
+                        dimension="user_proposed_verification",
+                        legal_domain=target_domain,
+                        why_relevant=f"User proposed target classification hypothesis '{request.user_selected_classification}' for verification.",
                     )
                 )
 
-        # ── 2. Patent IP (always) ──────────────────────────────────────────
+        # ── 2. Patent IP (always included) ──────────────────────────────
         dimensions.append(
             AnalysisDimension(
                 dimension="patent_ip",
                 legal_domain="patents",
                 why_relevant=(
-                    "Patent eligibility and non-patentable subject matter provisions "
-                    "are relevant to any novel Ayurvedic formulation, particularly "
-                    "regarding traditional knowledge exclusions."
+                    "Patentability criteria (Section 3(p) traditional knowledge exclusions, "
+                    "Section 3(e) mere admixture rules, Section 3(d) efficacy/new form rules, "
+                    "and inventive step) are relevant to any Ayurvedic product formulation."
                 ),
             )
         )
 
-        # ── 4b. Compliance Checklist ──────────────────────────────────────
-        compliance_domain = (
-            "ayurveda-aahar"
-            if any(k in cls_lower for k in ("aahar", "food", "nutraceutical", "dietary"))
-            else "drugs-cosmetics"
-        )
+        # ── 3. Compliance Checklist ─────────────────────────────────────
+        compliance_domain = "drugs-cosmetics" if has_disease_claim or has_drug_signal else "ayurveda-aahar"
         dimensions.append(
             AnalysisDimension(
                 dimension="compliance_checklist",
                 legal_domain=compliance_domain,
                 why_relevant=(
-                    "Statutory compliance obligations (labeling, manufacturing rules, "
-                    "Schedule requirements, approval, registration) apply to this formulation."
+                    "Statutory compliance obligations (labeling, claims, Schedule requirements, "
+                    "licensing, and approval pathways) apply to this formulation."
                 ),
             )
         )
 
-        # ── 5. Traditional Knowledge / Biodiversity ────────────────────────
-        ingredient_text = " ".join(
-            ing.name.lower() for ing in request.ingredients
-        )
-        combined_text = ingredient_text + " " + desc_lower
+        # ── 4. Traditional Knowledge / Biodiversity / ABS ──────────────
+        ingredient_text = " ".join(ing.name.lower() for ing in request.ingredients)
+        combined_ing_text = ingredient_text + " " + combined_context
 
         has_botanical_signal = any(
-            signal in combined_text for signal in _INDIAN_BOTANICAL_SIGNALS
+            signal in combined_ing_text for signal in _INDIAN_BOTANICAL_SIGNALS
         )
 
-        if has_botanical_signal or "traditional" in desc_lower or "classical" in desc_lower:
+        if has_botanical_signal or request.is_classical_basis == "yes" or "traditional" in combined_context or "classical" in combined_context:
             dimensions.append(
                 AnalysisDimension(
                     dimension="traditional_knowledge",
                     legal_domain="biodiversity",
                     why_relevant=(
-                        "One or more ingredients appear to be Indian biological resources "
-                        "or the description references traditional processing. Biodiversity "
-                        "Act and Access and Benefit Sharing (ABS) considerations may apply."
+                        "One or more botanical ingredients appear to be Indian biological resources "
+                        "or the formulation references classical/traditional knowledge. Biological Diversity Act "
+                        "and Access and Benefit Sharing (ABS) considerations apply."
                     ),
                 )
             )
 
-        # ── 6. Trademark ──────────────────────────────────────────────────
+        # ── 5. Trademark (always included) ──────────────────────────────
         dimensions.append(
             AnalysisDimension(
                 dimension="trademark",
                 legal_domain="trademarks",
                 why_relevant=(
-                    "Trademark registration may be available for the product or brand name "
-                    "if it is distinctive and not purely descriptive."
+                    "Trademark registration may be available for the product name/brand "
+                    "if distinctive and not descriptive."
                 ),
             )
         )
 
-        # ── 7. Design / Copyright (conditional product presentation signals) ─
-        visual_text = " ".join((product_name_lower, desc_lower, form_lower))
+        # ── 6. Design / Copyright ──────────────────────────────────────
+        visual_text = " ".join((product_name_lower, combined_context, form_lower))
         design_signals = frozenset(
-            {
-                "packaging", "bottle", "container", "shape", "ornamental",
-                "visual design", "appearance", "label design", "trade dress",
-            }
+            {"packaging", "bottle", "container", "shape", "ornamental", "visual design", "appearance", "label design", "trade dress"}
         )
         if any(sig in visual_text for sig in design_signals):
             dimensions.append(
                 AnalysisDimension(
                     dimension="design_protection",
                     legal_domain="designs",
-                    why_relevant=(
-                        "The product description references packaging, shape, "
-                        "appearance, or visual-design attributes."
-                    ),
+                    why_relevant="Product description references packaging, shape, or visual design attributes.",
                 )
             )
 
         copyright_signals = frozenset(
-            {
-                "label", "brochure", "leaflet", "manual", "logo artwork",
-                "artwork", "literary", "website copy", "marketing copy",
-            }
+            {"label", "brochure", "leaflet", "manual", "logo artwork", "artwork", "literary", "website copy", "marketing copy"}
         )
         if any(sig in visual_text for sig in copyright_signals):
             dimensions.append(
                 AnalysisDimension(
                     dimension="copyright_material",
                     legal_domain="copyright",
-                    why_relevant=(
-                        "The product description references label, artwork, "
-                        "literary, or marketing material."
-                    ),
+                    why_relevant="Product description references label artwork, literary material, or marketing copy.",
                 )
             )
 
-        # ── 8. GI (Geographical Indication) ──────────────────────────────
-        # Include if description mentions region-specific preparations
+        # ── 7. Geographical Indication (GI) ────────────────────────────
         gi_signals = frozenset(
-            {"kashmir", "kerala", "rajasthan", "assam", "darjeeling", "banaras",
-             "mysore", "kangra", "araku", "coorg", "nilgiri", "regional", "geographical"}
+            {"kashmir", "kerala", "rajasthan", "assam", "darjeeling", "banaras", "mysore", "kangra", "araku", "coorg", "nilgiri", "regional", "geographical"}
         )
-        if any(sig in combined_text for sig in gi_signals):
+        if any(sig in combined_ing_text for sig in gi_signals):
             dimensions.append(
                 AnalysisDimension(
                     dimension="gi_protection",
                     legal_domain="gi",
-                    why_relevant=(
-                        "The product description or ingredients may have geographical "
-                        "significance that could engage Geographical Indication protections."
-                    ),
+                    why_relevant="Product attributes or ingredients mention regional or geographical indications.",
                 )
             )
 
-        # ── 9. International treaties ─────────────────────────────────────
+        # ── 8. International Treaties ──────────────────────────────────
         if jur == "international":
             dimensions.append(
                 AnalysisDimension(
                     dimension="international_treaties",
                     legal_domain="treaties",
                     why_relevant=(
-                        "International jurisdiction was selected. CBD, Nagoya Protocol, "
-                        "TRIPS, and PCT considerations may apply for international "
-                        "IP protection or ABS obligations."
+                        "International jurisdiction was selected. CBD, Nagoya Protocol, TRIPS, "
+                        "and PCT considerations apply."
                     ),
                 )
             )
-            # Also add CBD specifically for biodiversity dimension if not already present
             if not any(d.legal_domain == "cbd" for d in dimensions):
                 dimensions.append(
                     AnalysisDimension(
                         dimension="cbd_nagoya",
                         legal_domain="cbd",
-                        why_relevant=(
-                            "The Convention on Biological Diversity (CBD) and Nagoya Protocol "
-                            "may be relevant for international commercialisation of "
-                            "products using Indian biological resources."
-                        ),
+                        why_relevant="Convention on Biological Diversity (CBD) & Nagoya Protocol ABS considerations apply.",
                     )
                 )
 
         return dimensions
+

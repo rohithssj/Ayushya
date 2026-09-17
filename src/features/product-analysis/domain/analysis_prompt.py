@@ -28,10 +28,37 @@ from src.features.product_analysis.domain.product_request import ProductAnalysis
 _RESPONSE_SCHEMA = """{
   "grounded_summary": "<concise preliminary analysis summary — 1-2 paragraphs based strictly on evidence>",
   "classification": {
-    "user_selected": "<user's stated classification>",
-    "preliminary_assessment": "<evidence-based preliminary note>",
+    "user_selected": "<user's stated hypothesis or 'No preference — let AYUSHYA assess'>",
+    "preliminary_assessment": "<overall grounded classification narrative>",
     "evidence_strength": "<strong|moderate|weak|insufficient>",
     "requires_verification": true,
+    "primary": {
+      "category": "<e.g. Ayurveda-Aahara | Proprietary Ayurvedic Formulation | Ayurvedic Drug / Medicine | Phytopharmaceutical | Ayurvedic Cosmetic | Not Established>",
+      "status": "<potentially_applicable|not_established|insufficient_evidence|requires_verification>",
+      "evidence_strength": "<strong|moderate|weak|insufficient>",
+      "requires_verification": true,
+      "reasoning": "<evidence-grounded explanation of why this category may apply>"
+    },
+    "alternatives": [
+      {
+        "category": "<alternative category candidate>",
+        "status": "<potentially_applicable|not_established|insufficient_evidence|requires_verification>",
+        "evidence_strength": "<strong|moderate|weak|insufficient>",
+        "reasoning": "<why this alternative framework must also be considered>"
+      }
+    ],
+    "missing_information": [
+      "<specific missing facts needed for definitive legal determination, e.g. exact classical reference text, manufacturing extraction ratio, or route of administration>"
+    ],
+    "decision_signals": {
+      "product_form": "<e.g. Tablet form is relevant to dosage form & drug/food classification analysis.>",
+      "intended_use": "<e.g. General wellness use provides one classification signal.>",
+      "claims": "<e.g. Health vs disease claims influence regulatory domain boundary.>",
+      "disease_claims": "<e.g. Disease treatment/prevention claims increase regulatory sensitivity under Drugs & Cosmetics Act Section 3 and Drugs & Magic Remedies Act.>",
+      "classical_basis": "<e.g. Classical Ayurvedic reference availability dictates classical vs proprietary framework.>",
+      "processing": "<e.g. Extract standardization influences phytopharmaceutical consideration.>",
+      "ingredients": "<e.g. Botanical herbs trigger consideration of relevant AYUSH, food, and biodiversity frameworks.>"
+    },
     "supporting_citation_ids": ["<cit_xxx>", ...]
   },
   "ip_assessment": [
@@ -81,10 +108,6 @@ def build_product_evidence_block(evidence_items: List[Dict[str, Any]], max_text_
     """
     Format the evidence items (selected and capped to LLM limit) into
     a structured context block for the LLM.
-
-    Only includes fields that exist in actual chunk metadata.
-    Does not fabricate any field value.
-    Cleanly bounds text length per evidence item to avoid excessive prompt overhead.
     """
     if not evidence_items:
         return "No evidence available."
@@ -144,85 +167,96 @@ def build_product_analysis_prompt(
 ) -> Tuple[str, str]:
     """
     Construct the system + user prompt for the grounded product analysis LLM call.
-
-    Returns: (system_prompt, user_prompt)
-
-    The LLM is instructed to return ONLY a valid JSON object matching the schema.
-    The parser (structured_response_parser.py) validates and sanitises the output.
     """
     domains_str = (
         ", ".join(domains_queried) if domains_queried else "multiple legal domains"
     )
 
     system_prompt = (
-        "You are AYUSHYA, an AI regulatory and IP information assistant for Ayurveda. "
-        "Your role is to produce a structured, grounded, PRELIMINARY product formulation "
-        "analysis based ONLY on the retrieved statutory evidence provided.\n\n"
-        "STRICT RULES — you MUST follow without exception:\n"
-        "1. Answer ONLY from the evidence supplied. Do not use your training data, "
-        "general knowledge of laws, or any information not present in the supplied evidence.\n"
-        "2. NEVER invent, fabricate, or guess: laws, section numbers, regulation names, "
-        "dates, authorities, URLs, page numbers, legal requirements, or compliance items.\n"
-        "3. When citing a source, use ONLY the citation_id values from the supplied evidence "
-        "(e.g. cit_abc123). Do not invent citation IDs. Do not cite a source not in the evidence.\n"
-        "4. PRELIMINARY LANGUAGE is mandatory. Use: 'may apply', 'potentially applicable', "
-        "'subject to verification', 'evidence indicates', 'preliminary assessment', "
-        "'based on available evidence'. Never state definitive legal conclusions or present classification as an official determination.\n"
-        "5. CONDITIONAL LEGAL REQUIREMENTS MUST NOT BE CONVERTED INTO UNCONDITIONAL OBLIGATIONS. "
-        "Do NOT output blanket actions like 'Obtain prior informed consent' or 'Establish mutually agreed terms'. Instead, use conditional decision-support phrasing: "
-        "'Determine whether prior informed consent requirements apply based on the relevant provider country\\'s applicable ABS framework and the circumstances of access/use', "
-        "and 'Determine whether mutually agreed terms are required and verify whether they have been established'.\n"
-        "6. DISTINGUISH CBD VS NAGOYA PROTOCOL. Do not state broadly that CBD and Nagoya require PIC/MAT. "
-        "Distinguish CBD (broader international treaty framework) from Nagoya Protocol (specific ABS framework mechanism) and note that domestic provider-country legislation is required to establish product-specific obligations.\n"
-        "7. CLASSIFICATION & PATENT WORDING RULES: "
-        "For classification, if unverified, use: 'AYUSHYA could not independently verify the user-selected classification from the available evidence.' "
-        "For patents, if no product-specific patent is established, use: 'No product-specific patent protection was established from the retrieved evidence.' Do not imply AYUSHYA has proven no patent exists.\n"
-        "8. The user-selected classification is PRELIMINARY USER INPUT — never treat it as legally verified.\n"
-        "9. If the evidence does not cover a dimension, state this explicitly and set evidence_strength to 'insufficient'.\n"
-        "10. Jurisdiction is explicit — NEVER mix Indian and international law in one claim. Do NOT cite Indian law or India's Biological Diversity Act in International mode.\n"
-        "11. STATE / PARTY OBLIGATIONS MUST NOT BE CONVERTED INTO PRODUCT-USER COMPLIANCE ITEMS. "
-        "If a treaty provision states 'Each Party shall...' or 'The State shall...' (e.g., designating a National Focal Point under Nagoya Protocol), do NOT create a compliance_checklist action.\n"
-        "12. INTERNATIONAL FRAMEWORK IS NOT A SINGLE DOMESTIC REGULATION. Treat international evidence as framework-level. "
-        "Surface missing facts (country of origin/provider, source location, TK usage, target market) required before determining if ABS applies.\n"
-        "13. compliance_checklist must contain 3–7 items, each grounded in evidence and applying directly to the product developer.\n\n"
+        "You are AYUSHYA, an AI regulatory and IP decision-support assistant for Ayurveda.\n"
+        "Your role is to produce an independent, fact-driven, PRELIMINARY product formulation analysis "
+        "based strictly on product facts and retrieved legal evidence.\n\n"
+        "CLASSIFICATION PRINCIPLES — CRITICAL:\n"
+        "1. DISTINGUISH USER HYPOTHESIS VS AYUSHYA ASSESSMENT: The user-selected classification is purely a user hypothesis ('user_selected'). "
+        "Never automatically set AYUSHYA's preliminary classification to equal the user hypothesis.\n"
+        "2. CONDITIONAL LEGAL REQUIREMENTS MUST NOT BE CONVERTED INTO UNCONDITIONAL OBLIGATIONS: Reason with preliminary and conditional language. "
+        "PRELIMINARY LANGUAGE is mandatory ('may apply', 'potentially applicable', 'subject to verification'). Never claim official legal determination.\n"
+        "3. FACT-DRIVEN REASONING: Product facts are signals, NOT definitive legal conclusions:\n"
+        "   - Dosage form (e.g. tablet) does NOT automatically mean Ayurvedic Drug.\n"
+        "   - Botanical ingredients (e.g. Ashwagandha) do NOT automatically mean Ayurveda-Aahar or Drug.\n"
+        "   - Ayurvedic ingredient does NOT automatically mean Classical Formulation unless an exact classical reference is established.\n"
+        "   - Standardized extract does NOT automatically mean Phytopharmaceutical.\n"
+        "   - Disease claim does NOT automatically make the product a legally classified drug, but it increases regulatory sensitivity and triggers scrutiny under Drugs & Cosmetics Act Section 3 and Drugs & Magic Remedies Act.\n"
+        "4. MULTI-CATEGORY AMBIGUITY: If product facts suggest overlapping frameworks (e.g. botanical tablet for wellness + disease claims or standardized extracts), return a primary category and list alternative categories in 'alternatives'. Do NOT force a single category if evidence is ambiguous.\n"
+        "5. MISSING INFORMATION & UNCERTAINTY: If facts/evidence are missing or unverified (e.g. missing classical reference text, extraction ratios, or intended route), explicitly list them under 'missing_information', use status='potentially_applicable', 'insufficient_evidence', or 'not_established', and keep requires_verification=true.\n"
+        "6. DECISION SIGNALS: Fill 'decision_signals' mapping product attributes (product_form, intended_use, claims, disease_claims, classical_basis, processing, ingredients) to their analytical significance grounded in evidence.\n"
+        "7. STRICT GROUNDING & NO FABRICATION: Answer ONLY from the evidence supplied. Use ONLY citation_ids present in the evidence block (e.g. cit_xxx).\n"
+        "8. JURISDICTION ISOLATION: Do NOT mix Indian law and international law in one claim.\n"
+        "9. INTERNATIONAL JURISDICTION RULES: When Target Jurisdiction is International and destination country is unspecified:\n"
+        "   - Do NOT invent destination country classifications (e.g. 'Botanical Dietary Supplement') unless backed by retrieved evidence for a specific country.\n"
+        "   - Set primary category to 'Undetermined (Destination Target Country Not Specified)' with status='not_established'.\n"
+        "   - Treat international treaties (CBD, Nagoya Protocol, TRIPS, PCT) strictly as international access/IP frameworks, NOT as destination country product regulations.\n"
+        "   - Distinguish Indian biological resource origin export obligations (Biological Diversity Act 2002 / ABS Regulations) from destination country import/market authorization rules.\n"
+        "   - Include 'Destination target country for import and market authorization' in missing_information.\n\n"
         f"Legal domains covered: {domains_str}.\n\n"
         "OUTPUT FORMAT — CRITICAL:\n"
-        "Return ONLY a valid JSON object matching the schema below. "
-        "Do NOT output any thinking process, reasoning, planning text, preamble, or scratchpad. "
-        "Start directly with `{` and end with `}`. "
-        "Keep text concise, factual, and direct to prevent truncation. "
-        "No markdown code fences. No text before or after the JSON. "
-        "No explanation. No apology. ONLY the JSON object.\n\n"
+        "Return ONLY a valid JSON object matching the schema below. No preamble, no markdown fences, no text outside JSON.\n\n"
         f"Schema:\n{_RESPONSE_SCHEMA}"
     )
 
     ingredient_str = _format_ingredients(request)
-    product_form = getattr(request, "product_form", getattr(request, "form", "Not specified"))
-    traditional_knowledge_ref = getattr(request, "traditional_knowledge_ref", None)
-    tk_ref = (
-        f"\nTraditional/Classical Reference: {traditional_knowledge_ref}"
-        if traditional_knowledge_ref
+    disease_flag = getattr(request, "disease_claim_flag", False)
+    disease_text = getattr(request, "disease_claim_text", "")
+    disease_claim_info = (
+        f"\nDisease Claim Flagged: YES — Claim Text: '{disease_text}'"
+        if disease_flag or disease_text
+        else "\nDisease Claim Flagged: No explicit disease claim indicated."
+    )
+    is_classical = getattr(request, "is_classical_basis", "unknown")
+    classical_ref = getattr(request, "classical_reference", "")
+    if is_classical == "unknown" or not classical_ref:
+        classical_info = (
+            "\nClassical Ayurvedic Basis: UNKNOWN / CLAIMED TRADITIONAL INSPIRATION — "
+            "Authoritative classical formulation reference could not be independently established."
+        )
+    else:
+        classical_info = (
+            f"\nClassical Ayurvedic Basis: {is_classical.upper()} — Reference Source: {classical_ref}"
+        )
+    mfg_proc = getattr(request, "manufacturing_processing", "")
+    processing_info = (
+        f"\nManufacturing / Processing Details: {mfg_proc}"
+        if mfg_proc
         else ""
     )
+    claims = getattr(request, "product_claims", "")
+    claims_info = (
+        f"\nProduct Health Claims: {claims}"
+        if claims
+        else ""
+    )
+    intended_use = getattr(request, "intended_use", "")
+    product_form = getattr(request, "product_form", getattr(request, "form", ""))
 
     user_prompt = (
         f"PRODUCT FORMULATION ANALYSIS REQUEST\n\n"
         f"Product Name: {request.product_name}\n"
         f"Product Form: {product_form}\n"
-        f"User-Selected Target Classification (PRELIMINARY — not legally verified): "
-        f"{request.user_selected_classification}\n"
+        f"Intended Use: {intended_use}\n"
+        f"Proposed Classification Hypothesis (User Input): {request.user_selected_classification}"
+        f"{claims_info}"
+        f"{disease_claim_info}"
+        f"{classical_info}"
+        f"{processing_info}\n"
         f"Target Jurisdiction: {request.jurisdiction}\n"
         f"Ingredients: {ingredient_str}\n"
-        f"Description & Processing Method: {request.description}"
-        f"{tk_ref}\n\n"
+        f"Description & Notes: {request.description}\n\n"
         f"EVIDENCE (answer ONLY from this block — do not use knowledge outside this block):\n"
         f"{evidence_block}\n\n"
-        "Using ONLY the evidence above, complete the JSON object with all six fields:\n"
-        "grounded_summary, classification, ip_assessment, regulatory_assessment, "
-        "tk_biodiversity, compliance_checklist.\n\n"
-        "Use only citation_ids from the evidence. If a field has no supporting evidence, "
-        "set evidence_strength to 'insufficient' and explain in the text field.\n\n"
-        "Return ONLY the JSON object. No markdown fences. No prose before or after."
+        "Complete the JSON object with all six top-level fields:\n"
+        "grounded_summary, classification, ip_assessment, regulatory_assessment, tk_biodiversity, compliance_checklist.\n\n"
+        "Return ONLY the JSON object. Start directly with '{' and end with '}'."
     )
 
     return system_prompt, user_prompt
+

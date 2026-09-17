@@ -82,17 +82,58 @@ class GroundedAnswerUseCase:
 
         # ── Step 0: Language detection & Query normalization ──
         from src.features.rag.domain.multilingual import QueryNormalizer, ResponseLocalizer
-        normalized_query, detected_lang = QueryNormalizer.normalize_query(query)
+        normalizer = QueryNormalizer()
+        normalized_query, detected_lang = normalizer.normalize(query)
         user_lang = target_language if target_language in ("en", "hi", "te") else detected_lang
+
+        # Safety Fallback: If query normalization failed for non-English query, return graceful failure response
+        if user_lang != "en" and normalized_query is None:
+            return {
+                "request_id": request_id,
+                "query": query,
+                "answer": (
+                    f"Multilingual retrieval for '{query}' is temporarily unavailable. "
+                    "Please re-submit your query in English."
+                ),
+                "abstained": True,
+                "abstention_reason": "Multilingual retrieval query normalization temporarily unavailable.",
+                "evidence_strength": "insufficient",
+                "requires_human_review": True,
+                "citations": [],
+                "evidence": {"selected": [], "count": 0},
+                "evidence_assessment": {
+                    "strength": "insufficient",
+                    "abstention_recommended": True,
+                    "requires_human_review": True,
+                    "reasons": ["Multilingual retrieval query normalization failed."],
+                },
+                "language": user_lang,
+                "multilingual_unavailable": True,
+            }
+
+        retrieval_query = normalized_query if normalized_query is not None else query
+
+        # ── Step 0b: Intent Detection & Focused Query Expansion ──
+        from src.features.rag.domain.intent_detector import IntentDetector
+        intent_res = IntentDetector.detect_intent(query, normalized_query=retrieval_query)
+        # Always respect explicit caller-provided domain filter (e.g., from evaluation suite cases)
+        target_domain = domain if domain else (intent_res.suggested_domain_filter if intent_res.confidence >= 0.90 else None)
+
+        # Expand query for targeted legal retrieval when patent intent is detected
+        if intent_res.domain == "patents":
+            retrieval_query = f"{retrieval_query} patentability novelty inventive step industrial applicability Section 3(p) Patents Act 1970 AYUSH guidelines"
 
         # ── Step 1: Retrieve + evaluate evidence ──
         retrieval_output = self._retrieval.execute(
-            query=normalized_query,
+            query=retrieval_query,
             top_k=top_k,
             jurisdiction=jurisdiction,
-            domain=domain,
+            domain=target_domain,
+
             original_query=query,
+            detected_domain=intent_res.domain,
         )
+
 
         # ── Step 2: Evidence selection + citation construction ──
         retrieval_output = self._evidence_selector.execute(retrieval_output)
@@ -111,8 +152,8 @@ class GroundedAnswerUseCase:
                 else "Insufficient authoritative evidence found for this query."
             )
             # Translate abstention reason if target language is Hindi or Telugu
-            if user_lang != "en" and self._llm:
-                localizer = ResponseLocalizer(self._llm)
+            if user_lang != "en":
+                localizer = ResponseLocalizer()
                 abstention_reason = localizer.localize_answer(abstention_reason, user_lang)
 
             resp = AbstentionResponse(
@@ -130,7 +171,7 @@ class GroundedAnswerUseCase:
 
         # ── Step 4: Build prompt from selected evidence only ──
         evidence_block = build_evidence_block(selected_evidence)
-        system_prompt, user_prompt = build_grounding_prompt(normalized_query, evidence_block)
+        system_prompt, user_prompt = build_grounding_prompt(retrieval_query, evidence_block)
 
         # ── Step 5: Call LLM ──
         try:
@@ -169,7 +210,7 @@ class GroundedAnswerUseCase:
         # ── Step 6b: Localize answer to target language if needed ──
         final_answer = raw_answer
         if user_lang != "en":
-            localizer = ResponseLocalizer(self._get_llm())
+            localizer = ResponseLocalizer()
             final_answer = localizer.localize_answer(raw_answer, user_lang)
 
         # ── Step 7: Return GroundedAnswer ──
@@ -188,3 +229,4 @@ class GroundedAnswerUseCase:
         result["evidence_assessment"] = assessment
         result["language"] = user_lang
         return result
+

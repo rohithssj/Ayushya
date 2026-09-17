@@ -450,35 +450,132 @@ export default function AnalysisResultsDashboard() {
               </div>
             </div>
 
-            {/* Preliminary Classification Assessment Card */}
+            {/* Preliminary Classification Assessment Card v2 */}
             {classification && (
-              <div className="p-6 rounded-2xl bg-[#040705] border border-amber-500/20 space-y-3 shadow-md">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">
-                    Preliminary Classification Assessment
-                  </h3>
-                  <span className="text-[10px] text-[#A3B3A9] font-mono border border-amber-500/30 px-2 py-0.5 rounded">
-                    ⚠ Not an Official Determination
+              <div className="p-6 rounded-2xl bg-[#040705] border border-emerald-500/30 space-y-6 shadow-xl">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-[rgba(212,175,55,0.18)] pb-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono text-[#D4AF37] uppercase tracking-wider">
+                      AYUSHYA Formulation Classification Engine v2
+                    </span>
+                    <h3 className="text-base font-extrabold text-[#F4F8F5] font-display flex items-center gap-2">
+                      <Scale className="w-5 h-5 text-[#10B981]" />
+                      <span>Classification Assessment</span>
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-amber-300 font-mono border border-amber-500/40 bg-amber-950/20 px-2.5 py-1 rounded-full">
+                    ⚠ Preliminary — Verification Required
                   </span>
                 </div>
-                <p className="text-sm text-[#F4F8F5] leading-relaxed font-sans">
-                  {classification.preliminary_assessment}
-                </p>
-                <p className="text-xs text-[#6C7D73] font-mono">
-                  User-selected:{" "}
-                  <strong className="text-[#D4AF37]">
-                    {classification.user_selected}
-                  </strong>{" "}
-                  • Evidence:{" "}
-                  <EvidenceBadge strength={classification.evidence_strength} />
-                  {classification.requires_verification && (
-                    <span className="ml-2 text-amber-400">
-                      • Verification required
+
+                {/* Proposed vs Assessment Comparison Grid */}
+                <div className="grid md:grid-cols-2 gap-5">
+                  {/* Left: User Proposed Hypothesis */}
+                  <div className="p-4.5 rounded-xl bg-[#080D0A] border border-[rgba(212,175,55,0.18)] space-y-2">
+                    <span className="text-[11px] font-mono font-bold text-[#A3B3A9] uppercase tracking-wider">
+                      PROPOSED CLASSIFICATION
                     </span>
-                  )}
-                </p>
+                    <p className="text-sm font-bold text-[#F3E5AB]">
+                      {classification.user_selected && classification.user_selected.toLowerCase() !== "no_preference"
+                        ? classification.user_selected
+                        : "None (No preference — let AYUSHYA assess)"}
+                    </p>
+                    <p className="text-[11px] text-[#6C7D73] italic">
+                      User-submitted hypothesis. AYUSHYA independently evaluates facts against retrieved statutory evidence.
+                    </p>
+                  </div>
+
+                  {/* Right: AYUSHYA Assessment */}
+                  <div className="p-4.5 rounded-xl bg-[#09130D] border border-emerald-500/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-mono font-bold text-[#10B981] uppercase tracking-wider">
+                        AYUSHYA PRELIMINARY ASSESSMENT
+                      </span>
+                      {classification.primary?.status && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border bg-[#0D1611] text-emerald-400 border-emerald-500/30">
+                          {classification.primary.status.replace(/_/g, " ")}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-base font-extrabold text-[#F4F8F5] font-display">
+                      {classification.primary?.category || "Potentially Applicable"}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-[#A3B3A9]">
+                      <span>Evidence:</span>
+                      <EvidenceBadge strength={classification.primary?.evidence_strength || classification.evidence_strength} />
+                      <span className="text-amber-400 font-mono">• Verification Required</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Primary Grounded Explanation */}
+                {classification.primary?.reasoning && (
+                  <div className="p-4 rounded-xl bg-[#080D0A] border border-[rgba(212,175,55,0.15)] space-y-1.5 text-xs text-[#F4F8F5] font-sans">
+                    <span className="font-bold text-[#D4AF37] font-mono uppercase">Assessment Rationale:</span>
+                    <p className="leading-relaxed text-[#A3B3A9]">{classification.primary.reasoning}</p>
+                  </div>
+                )}
+
+                {/* Alternative Categories (if any) */}
+                {classification.alternatives && classification.alternatives.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    <h4 className="text-xs font-bold text-[#F3E5AB] uppercase tracking-wider font-mono">
+                      Alternative Potentially Relevant Categories
+                    </h4>
+                    <div className="grid gap-2.5">
+                      {classification.alternatives.map((alt, idx) => (
+                        <div key={idx} className="p-3.5 rounded-xl bg-[#080D0A] border border-[rgba(212,175,55,0.18)] text-xs space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[#F4F8F5]">{alt.category}</span>
+                            <span className="text-[10px] font-mono text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded">
+                              {alt.status?.replace(/_/g, " ") || "potentially_applicable"}
+                            </span>
+                          </div>
+                          {alt.reasoning && <p className="text-[#A3B3A9] text-xs">{alt.reasoning}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Why This Classification? — Decision Signals */}
+                {classification.decision_signals && Object.keys(classification.decision_signals).length > 0 && (
+                  <div className="space-y-3 pt-2 border-t border-[rgba(212,175,55,0.15)]">
+                    <h4 className="text-xs font-bold text-[#F3E5AB] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                      <span>Why this classification? (Key Product Signals)</span>
+                    </h4>
+                    <div className="grid sm:grid-cols-2 gap-2.5 text-xs">
+                      {Object.entries(classification.decision_signals).map(([key, val]) => (
+                        <div key={key} className="p-3 rounded-xl bg-[#080D0A] border border-white/[0.06] space-y-1">
+                          <span className="font-bold text-[#10B981] font-mono uppercase text-[10px]">
+                            ✓ {key.replace(/_/g, " ")}
+                          </span>
+                          <p className="text-[#A3B3A9] leading-snug">{String(val)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Missing Information Checklist */}
+                {classification.missing_information && classification.missing_information.length > 0 && (
+                  <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-2 text-xs">
+                    <span className="font-bold text-amber-300 font-mono uppercase flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      Missing Information for Definitive Determination:
+                    </span>
+                    <ul className="list-disc list-inside space-y-1 text-amber-200/90 font-sans">
+                      {classification.missing_information.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
+
 
             {/* Grounded Legal Intelligence Summary */}
             <div className="p-6 rounded-2xl bg-[#040705] border border-[rgba(212,175,55,0.2)] space-y-3 shadow-md">

@@ -114,13 +114,21 @@ class QueryBuilder:
         parts = [
             request.product_name,
             request.product_form,
-            request.user_selected_classification,
+            request.intended_use,
         ]
+        if request.user_selected_classification and request.user_selected_classification.lower() not in ("no_preference", "no preference — let ayushya assess"):
+            parts.append(request.user_selected_classification)
+        if request.product_claims:
+            parts.append(f"claims {request.product_claims}")
+        if request.disease_claim_flag or request.disease_claim_text:
+            parts.append(f"disease claims {request.disease_claim_text or 'prevent treat cure'}")
+        if request.classical_reference:
+            parts.append(f"classical reference {request.classical_reference}")
+        if request.manufacturing_processing:
+            parts.append(f"processing {request.manufacturing_processing}")
         if ing_str:
             parts.append(f"ingredients {ing_str}")
-        if request.description:
-            parts.append(request.description[:400])
-        return " ".join(part for part in parts if part)
+        return " ".join(part for part in parts if part)[:500]
 
     def _build_classification_query(
         self, request: ProductAnalysisRequest, dimension: AnalysisDimension
@@ -129,12 +137,12 @@ class QueryBuilder:
         if dimension.legal_domain == "drugs-cosmetics":
             base = (
                 "Ayurvedic Siddha Unani ASU medicine proprietary medicine classical "
-                "formulation phytopharmaceutical cosmetic product classification definition"
+                "formulation phytopharmaceutical cosmetic product classification definition Section 3 disease treatment advertisement prohibition"
             )
         else:
             base = (
                 "Ayurveda Aahar food supplement nutraceutical dietary supplement "
-                "product classification definition FSSAI"
+                "product classification definition FSSAI Schedule A non-disease"
             )
 
         return TargetedQuery(
@@ -143,10 +151,11 @@ class QueryBuilder:
             legal_domain=dimension.legal_domain,
             jurisdiction=request.jurisdiction,
             why_constructed=(
-                "Targets definitions and classification provisions relevant to the "
-                "user-selected product category."
+                "Targets definitions and statutory classification provisions relevant to the "
+                "formulation attributes and regulatory frameworks."
             ),
         )
+
 
     def _build_patent_query(
         self, request: ProductAnalysisRequest, dimension: AnalysisDimension

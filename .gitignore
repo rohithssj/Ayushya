@@ -4,6 +4,7 @@ node_modules/
 venv/
 ENV/
 env/
+.env.example
 
 # Build & Output directories
 .next/

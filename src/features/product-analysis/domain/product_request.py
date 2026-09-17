@@ -27,12 +27,19 @@ SUPPORTED_JURISDICTIONS: frozenset = frozenset({"india", "international"})
 
 SUPPORTED_CLASSIFICATIONS: frozenset = frozenset(
     {
+        "no_preference",
+        "no preference — let ayushya assess",
         "ayurveda-aahar",
-        "proprietary asu medicine",
-        "classical formulation",
+        "ayurveda-aahara",
+        "ayurvedic drug / medicine",
+        "classical ayurvedic formulation",
+        "proprietary ayurvedic formulation",
         "phytopharmaceutical",
         "ayurvedic cosmetic",
+        "proprietary asu medicine",
+        "classical formulation",
         "nutraceutical",
+        "other / not sure",
         "other",
     }
 )
@@ -80,24 +87,38 @@ class ProductAnalysisRequest:
     """
     Validated product formulation analysis request.
 
-    Fields:
+    Required Fields:
       jurisdiction               — 'India' or 'International'
       product_name               — product name (required)
       product_form               — dosage form (tablet, capsule, etc.)
-      user_selected_classification — the user's stated target classification
-                                    (treated as preliminary, not legally verified)
-      description                — product description + processing method
-      ingredients                — list of IngredientRecord
-      traditional_knowledge_ref  — optional: classical reference / textual basis
-                                   (not in current UI, supported for future use)
+      ingredients                — list of IngredientRecord (required, non-empty)
+      intended_use               — intended use / purpose (required)
+
+    Optional Classification Facts:
+      user_selected_classification — optional hypothesis (default: "no_preference")
+      product_claims             — optional product health/marketing claims
+      disease_claim_flag         — optional boolean (true if disease claim made)
+      disease_claim_text         — optional exact disease claim text
+      is_classical_basis         — 'yes' | 'no' | 'unknown'
+      classical_reference        — optional reference text/source
+      manufacturing_processing   — optional processing details
+      description                — optional description/notes (backed by intended_use)
+      traditional_knowledge_ref  — optional TK reference
     """
 
-    jurisdiction: str                        # normalised to lowercase
+    jurisdiction: str
     product_name: str
     product_form: str
-    user_selected_classification: str
-    description: str
     ingredients: List[IngredientRecord]
+    intended_use: str
+    user_selected_classification: str = "no_preference"
+    product_claims: str = ""
+    disease_claim_flag: bool = False
+    disease_claim_text: str = ""
+    is_classical_basis: str = "unknown"
+    classical_reference: Optional[str] = None
+    manufacturing_processing: str = ""
+    description: str = ""
     traditional_knowledge_ref: Optional[str] = None
 
 
@@ -121,8 +142,6 @@ def validate_product_request(raw: dict) -> ProductAnalysisRequest:
 
     Raises ProductRequestValidationError with a descriptive message on any
     validation failure.
-
-    Does NOT fabricate or infer legal conclusions from the supplied data.
     """
     errors: List[str] = []
 
@@ -146,25 +165,30 @@ def validate_product_request(raw: dict) -> ProductAnalysisRequest:
 
     # ── Product form ──────────────────────────────────────────────────────
     form_raw = _strip_safe(raw.get("form") or raw.get("product_form"))
-    product_form = form_raw if form_raw else "tablet"
+    product_form = form_raw if form_raw else "Tablet"
+
+    # ── Intended Use & Description ────────────────────────────────────────
+    intended_use = _strip_safe(raw.get("intendedUse") or raw.get("intended_use"))
+    description = _strip_safe(raw.get("description"))
+
+    if not intended_use and not description:
+        errors.append("'intended_use' (or 'description') is required.")
+    elif not intended_use:
+        intended_use = description
+    elif not description:
+        description = intended_use
+
+    if len(intended_use) > MAX_DESCRIPTION_LEN:
+        errors.append(f"'intended_use' must not exceed {MAX_DESCRIPTION_LEN} characters.")
+    if len(description) > MAX_DESCRIPTION_LEN:
+        errors.append(f"'description' must not exceed {MAX_DESCRIPTION_LEN} characters.")
 
     # ── Classification ────────────────────────────────────────────────────
-    cls_raw = _strip_safe(raw.get("category") or raw.get("user_selected_classification"))
+    cls_raw = _strip_safe(raw.get("category") or raw.get("user_selected_classification") or raw.get("proposed_classification"))
     if not cls_raw:
-        # Default to 'other' if not provided — not an error
         cls_raw = "other"
-    if cls_raw.lower() not in SUPPORTED_CLASSIFICATIONS:
-        # Accept unknown classification as 'other' — do not block
+    elif cls_raw.lower() not in SUPPORTED_CLASSIFICATIONS:
         cls_raw = "other"
-
-    # ── Description ───────────────────────────────────────────────────────
-    description = _strip_safe(raw.get("description"))
-    if not description:
-        errors.append("'description' is required.")
-    elif len(description) > MAX_DESCRIPTION_LEN:
-        errors.append(
-            f"'description' must not exceed {MAX_DESCRIPTION_LEN} characters."
-        )
 
     # ── Ingredients ───────────────────────────────────────────────────────
     raw_ingredients = raw.get("ingredients")
@@ -199,16 +223,17 @@ def validate_product_request(raw: dict) -> ProductAnalysisRequest:
                     unit = "other"
                 ingredients.append(IngredientRecord(name=name, quantity=quantity, unit=unit))
 
-    # ── Traditional knowledge reference (optional) ─────────────────────────
-    tk_ref_raw = _strip_safe(raw.get("traditional_knowledge_ref") or "")
-    traditional_knowledge_ref: Optional[str] = None
-    if tk_ref_raw:
-        if len(tk_ref_raw) > MAX_TK_REF_LEN:
-            errors.append(
-                f"'traditional_knowledge_ref' must not exceed {MAX_TK_REF_LEN} characters."
-            )
-        else:
-            traditional_knowledge_ref = tk_ref_raw
+
+    # ── Optional classification signals ──────────────────────────────────
+    product_claims = _strip_safe(raw.get("productClaims") or raw.get("product_claims"))
+    disease_claim_flag = bool(raw.get("diseaseClaimFlag") or raw.get("disease_claim_flag"))
+    disease_claim_text = _strip_safe(raw.get("diseaseClaimText") or raw.get("disease_claim_text"))
+    
+    is_classical_raw = _strip_safe(raw.get("isClassicalBasis") or raw.get("is_classical_basis")).lower()
+    is_classical_basis = is_classical_raw if is_classical_raw in ("yes", "no") else "unknown"
+    
+    classical_reference = _strip_safe(raw.get("classicalReference") or raw.get("classical_reference") or raw.get("traditional_knowledge_ref")) or None
+    manufacturing_processing = _strip_safe(raw.get("manufacturingProcessing") or raw.get("manufacturing_processing"))
 
     # ── Raise if any errors ───────────────────────────────────────────────
     if errors:
@@ -216,7 +241,6 @@ def validate_product_request(raw: dict) -> ProductAnalysisRequest:
             "Product analysis request validation failed: " + "; ".join(errors)
         )
 
-    # Normalise jurisdiction to Title Case for internal use and RAG chunk metadata matching
     jurisdiction_normalised = (
         "International" if "international" in jur_raw.lower() else "India"
     )
@@ -225,8 +249,16 @@ def validate_product_request(raw: dict) -> ProductAnalysisRequest:
         jurisdiction=jurisdiction_normalised,
         product_name=product_name,
         product_form=product_form,
-        user_selected_classification=cls_raw,
-        description=description,
         ingredients=ingredients,
-        traditional_knowledge_ref=traditional_knowledge_ref,
+        intended_use=intended_use,
+        user_selected_classification=cls_raw,
+        product_claims=product_claims,
+        disease_claim_flag=disease_claim_flag,
+        disease_claim_text=disease_claim_text,
+        is_classical_basis=is_classical_basis,
+        classical_reference=classical_reference,
+        manufacturing_processing=manufacturing_processing,
+        description=description,
+        traditional_knowledge_ref=classical_reference,
     )
+

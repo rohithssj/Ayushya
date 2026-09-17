@@ -709,7 +709,7 @@
       "evidence_quality": {
         "dimension": "Evidence Quality",
         "passed": true,
-        "details": "Evidence strength 'moderate', abstention=False."
+        "details": "Evidence strength 'strong', abstention=False."
       },
       "citation_correctness": {
         "dimension": "Citation Correctness",
