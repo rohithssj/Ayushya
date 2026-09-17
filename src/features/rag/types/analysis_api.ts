@@ -14,13 +14,20 @@ export interface IngredientInput {
 
 export interface AnalysisApiRequest {
   productName: string;
-  category: string;
+  category?: string;
+  proposed_classification?: string;
   form?: string;
-  description: string;
+  description?: string;
+  intended_use?: string;
+  product_claims?: string;
+  disease_claim_flag?: boolean;
+  disease_claim_text?: string;
+  is_classical_basis?: 'yes' | 'no' | 'unknown';
+  classical_reference?: string;
+  manufacturing_processing?: string;
   ingredients: IngredientInput[];
   jurisdiction: Jurisdiction;
   domain?: string;
-  /** Optional traditional knowledge / classical reference field (future UI) */
   traditional_knowledge_ref?: string;
 }
 
@@ -28,11 +35,23 @@ export interface AnalysisApiRequest {
 // Structured analysis result types (new — all fields explicitly preliminary)
 // ---------------------------------------------------------------------------
 
+export interface ClassificationCategoryDetail {
+  category: string;
+  status: 'potentially_applicable' | 'not_established' | 'insufficient_evidence' | 'requires_verification';
+  evidence_strength: EvidenceStrength;
+  requires_verification: boolean;
+  reasoning: string;
+}
+
 /** Preliminary product classification assessment. Never an official determination. */
 export interface ClassificationAssessment {
   user_selected: string;
   preliminary_assessment: string;
   evidence_strength: EvidenceStrength;
+  primary?: ClassificationCategoryDetail;
+  alternatives?: ClassificationCategoryDetail[];
+  missing_information?: string[];
+  decision_signals?: Record<string, string>;
   /** Always true — classification is never officially determined by AYUSHYA */
   requires_verification: boolean;
   supporting_citation_ids: string[];

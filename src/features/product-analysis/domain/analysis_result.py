@@ -22,18 +22,26 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class ClassificationAssessment:
     """
-    Preliminary product classification assessment.
+    Preliminary product classification assessment v2.
 
-    user_selected: the classification submitted by the user (not legally verified).
-    preliminary_assessment: AYUSHYA's evidence-based preliminary note.
-    evidence_strength: strength of retrieved evidence supporting this assessment.
-    requires_verification: always True — this is never an official determination.
-    supporting_citation_ids: citation_ids from retrieved evidence that informed this.
+    user_selected: optional user hypothesis (e.g. "No preference — let AYUSHYA assess" or "Ayurveda-Aahar").
+    primary: primary category assessment {category, status, evidence_strength, requires_verification, reasoning}
+    alternatives: alternative categories [{category, status, evidence_strength, reasoning}]
+    missing_information: list of missing product facts / evidence needed for definitive classification
+    decision_signals: dict of key product signals used (product_form, intended_use, claims, disease_claims, classical_basis, processing, ingredients)
+    preliminary_assessment: summary narrative text
+    evidence_strength: overall classification evidence strength
+    requires_verification: always True
+    supporting_citation_ids: citation_ids from retrieved evidence
     """
 
     user_selected: str
     preliminary_assessment: str
     evidence_strength: str
+    primary: Dict[str, Any] = field(default_factory=dict)
+    alternatives: List[Dict[str, Any]] = field(default_factory=list)
+    missing_information: List[str] = field(default_factory=list)
+    decision_signals: Dict[str, Any] = field(default_factory=dict)
     requires_verification: bool = True
     supporting_citation_ids: List[str] = field(default_factory=list)
 
@@ -42,9 +50,14 @@ class ClassificationAssessment:
             "user_selected": self.user_selected,
             "preliminary_assessment": self.preliminary_assessment,
             "evidence_strength": self.evidence_strength,
+            "primary": self.primary,
+            "alternatives": self.alternatives,
+            "missing_information": self.missing_information,
+            "decision_signals": self.decision_signals,
             "requires_verification": self.requires_verification,
             "supporting_citation_ids": self.supporting_citation_ids,
         }
+
 
 
 @dataclass

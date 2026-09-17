@@ -196,5 +196,60 @@
     "should_have_sufficient_evidence": false,
     "expected_abstention": true,
     "expected_keywords": []
+  },
+  {
+    "id": "EVAL_019",
+    "category": "Multilingual Hindi",
+    "query": "आयुर्वेदिक उत्पाद के लिए पेटेंट की क्या आवश्यकताएं हैं?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "patents",
+    "expected_topic": "Section 3 patent eligibility in Hindi",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["patent", "invention"]
+  },
+  {
+    "id": "EVAL_020",
+    "category": "Multilingual Telugu",
+    "query": "ఆయుర్వేద ఉత్పత్తికి పేటెంట్ పొందడానికి ఏమి అవసరం?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "patents",
+    "expected_topic": "Section 3 patent eligibility in Telugu",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["patent", "invention"]
+  },
+  {
+    "id": "EVAL_021",
+    "category": "Multilingual Romanized",
+    "query": "Ashwagandha tablet ki patent apply cheyyacha?",
+    "expected_jurisdiction": "India",
+    "expected_domain": "patents",
+    "expected_topic": "Section 3(p) TKDL patentability in Romanized Telugu",
+    "should_have_sufficient_evidence": true,
+    "expected_abstention": false,
+    "expected_keywords": ["patent", "mixture", "component"]
+  },
+  {
+    "id": "EVAL_022",
+    "category": "Multilingual Unsupported Hindi",
+    "query": "US mein patent apply karne ki kya requirements hain?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "unsupported",
+    "expected_topic": "US domestic patent law query in Hindi",
+    "should_have_sufficient_evidence": false,
+    "expected_abstention": true,
+    "expected_keywords": []
+  },
+  {
+    "id": "EVAL_023",
+    "category": "Multilingual Unsupported Telugu",
+    "query": "USA loni patent kavalante emi avasaram?",
+    "expected_jurisdiction": "International",
+    "expected_domain": "unsupported",
+    "expected_topic": "US domestic patent law query in Telugu",
+    "should_have_sufficient_evidence": false,
+    "expected_abstention": true,
+    "expected_keywords": []
   }
 ]

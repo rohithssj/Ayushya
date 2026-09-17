@@ -98,12 +98,13 @@ def validate_citations(
 # Prompt construction
 # ---------------------------------------------------------------------------
 
-def build_evidence_block(selected_evidence: List[Dict[str, Any]]) -> str:
+def build_evidence_block(selected_evidence: List[Dict[str, Any]], max_text_len: int = 1500) -> str:
     """
     Format selected evidence into a structured context block for the LLM.
 
     Only includes fields that exist in the actual chunk metadata.
     Does not fabricate any field.
+    Cleanly bounds text length per evidence item to avoid excessive prompt overhead.
     """
     if not selected_evidence:
         return "No evidence available."
@@ -112,6 +113,8 @@ def build_evidence_block(selected_evidence: List[Dict[str, Any]]) -> str:
     for i, ev in enumerate(selected_evidence, 1):
         cit: Dict[str, Any] = ev.get("citation", {})
         text: str = ev.get("text", "").strip()
+        if len(text) > max_text_len:
+            text = text[:max_text_len] + "..."
 
         lines.append(f"--- EVIDENCE {i} ---")
         lines.append(f"citation_id: {cit.get('citation_id', '')}")

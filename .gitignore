@@ -1,7 +1,42 @@
-.next/
+# Dependencies & Virtual Envs
 node_modules/
-.env
-.env.local
+.venv/
+venv/
+ENV/
+env/
+.env.example
+
+# Build & Output directories
+.next/
 out/
 dist/
 build/
+*.tsbuildinfo
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Environment & Secrets files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE & OS temporary files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary scratch scripts & debug logs
+scratch/
+*.log

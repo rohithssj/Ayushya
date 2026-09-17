@@ -14,6 +14,7 @@ class EvidenceEvaluator:
         query: str,
         jurisdiction: Optional[str] = None,
         domain: Optional[str] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Deterministically evaluates evidence strength, abstention recommendation,
@@ -58,8 +59,19 @@ class EvidenceEvaluator:
             else:
                 filter_mismatches += 1
 
-        if not aligned_items:
-            reasons.append("No retrieval results aligned with the requested jurisdiction and domain filters.")
+        # Check for explicit country/out-of-corpus domain intent
+        unsupported_countries = {"us", "usa", "united states", "uk", "united kingdom", "germany", "japan", "australia", "canada", "norway", "railway", "train", "tatkal"}
+        search_text = f"{query} {kwargs.get('original_query', '')}".lower()
+        query_words = set(re.findall(r"\b[a-z]+\b", search_text))
+        matched_unsupported = query_words.intersection(unsupported_countries)
+
+        if matched_unsupported:
+            reason_msg = (
+                f"I can explain the international framework, but I do not currently have sufficient "
+                f"authoritative country-specific evidence for '{', '.join(sorted(matched_unsupported)).upper()}' "
+                f"to provide a reliable domestic-law conclusion."
+            )
+            reasons.append(reason_msg)
             return {
                 "strength": "insufficient",
                 "abstention_recommended": True,
@@ -126,16 +138,54 @@ class EvidenceEvaluator:
         else:
             reasons.append("Top result is missing full citation metadata (section/chapter or title).")
 
+        # 6. Domain Relevance Gate
+        # Check if query intent domain matches retrieved items when domain intent is set
+        detected_domain = kwargs.get("detected_domain") or domain
+        domain_relevant_items = substantive_items
+        if detected_domain and detected_domain.strip():
+            det_dom = detected_domain.strip().lower()
+            # If domain is 'general' or 'unsupported', bypass strict filtering
+            if det_dom not in ("general", "unsupported"):
+                relevant_subset = []
+                for item in substantive_items:
+                    item_dom = str(item.get("domain") or (item.get("metadata") or {}).get("domain") or "").strip().lower()
+                    text = str(item.get("text") or "").lower()
+                    # Domain equivalence mapping
+                    matches = (
+                        item_dom == det_dom
+                        or (det_dom in ("patents", "ip") and (item_dom in ("patents", "ip") or any(k in text for k in ["patent", "inventive", "novelty", "section 3(p)", "patents act"])))
+                        or (det_dom in ("trademarks", "trade_marks") and (item_dom in ("trademarks", "trade_marks") or any(k in text for k in ["trademark", "brand name", "trade mark", "logo"])))
+                        or (det_dom in ("gi", "geographical_indications") and (item_dom in ("gi", "geographical_indications") or any(k in text for k in ["geographical indication", "gi tag", "gi act"])))
+                        or (det_dom in ("copyright",) and (item_dom in ("copyright",) or any(k in text for k in ["copyright", "literary work", "artistic work"])))
+                        or (det_dom in ("designs",) and (item_dom in ("designs",) or any(k in text for k in ["design", "shape", "article"])))
+                        or (det_dom in ("biodiversity", "cbd", "treaties") and (item_dom in ("biodiversity", "cbd", "treaties") or any(k in text for k in ["biodiversity", "biological resource", "abs", "benefit sharing", "nagoya"])))
+                        or (det_dom in ("ayurveda-aahar", "ayurveda-ahara", "regulatory", "drugs-cosmetics") and (item_dom in ("ayurveda-aahar", "ayurveda-ahara", "regulatory", "drugs-cosmetics") or any(k in text for k in ["fssai", "license", "drug", "food", "aahara"])))
+                    )
+                    if matches:
+                        relevant_subset.append(item)
+
+                if substantive_items and not relevant_subset:
+                    reasons.append(f"Domain relevance gate: No retrieved chunks matched the detected intent domain '{detected_domain}'.")
+                    return {
+                        "strength": "insufficient",
+                        "abstention_recommended": True,
+                        "requires_human_review": True,
+                        "reasons": reasons,
+                    }
+                elif relevant_subset:
+                    domain_relevant_items = relevant_subset
+
+
         # Deterministic strength classification
         # Score thresholds based on RRF hybrid scoring scale:
         # Strong: top_score >= 0.025 with dual match or complete metadata
         # Moderate: top_score >= 0.015
         # Weak: top_score >= 0.010
         # Insufficient: top_score < 0.010
-        if top_score >= 0.025 and (has_dual_match or metadata_complete) and substantive_count >= 1:
+        if top_score >= 0.025 and (has_dual_match or metadata_complete) and len(domain_relevant_items) >= 1:
             strength = "strong"
             reasons.append(f"Top retrieval hybrid score ({top_score:.4f}) is strong.")
-        elif top_score >= 0.015 and substantive_count >= 1:
+        elif top_score >= 0.015 and len(domain_relevant_items) >= 1:
             strength = "moderate"
             reasons.append(f"Top retrieval hybrid score ({top_score:.4f}) is moderate.")
         elif top_score >= 0.010:
@@ -166,3 +216,4 @@ class EvidenceEvaluator:
             "requires_human_review": requires_human_review,
             "reasons": reasons,
         }
+

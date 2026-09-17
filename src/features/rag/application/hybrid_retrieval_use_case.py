@@ -32,6 +32,8 @@ class HybridRetrievalUseCase:
         top_k: int = 5,
         jurisdiction: Optional[str] = None,
         domain: Optional[str] = None,
+        original_query: Optional[str] = None,
+        detected_domain: Optional[str] = None,
     ) -> Dict[str, Any]:
         results: List[HybridRetrievalResult] = self.retriever.search(
             query=query,
@@ -45,7 +47,10 @@ class HybridRetrievalUseCase:
             query=query,
             jurisdiction=jurisdiction,
             domain=domain,
+            original_query=original_query or query,
+            detected_domain=detected_domain,
         )
+
         
         return {
             "query": query,

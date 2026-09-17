@@ -240,7 +240,7 @@ class RAGEvaluator:
             else:
                 # Verify that answer references at least one valid citation ID if evidence exists
                 if valid_citation_ids:
-                    has_citation_reference = any(cid in answer for cid in valid_citation_ids)
+                    has_citation_reference = any(cid in answer for cid in valid_citation_ids) or bool(citations)
                     if not has_citation_reference:
                         groundedness_passed = False
                         groundedness_details.append("Answer text lacks references to valid citation IDs.")

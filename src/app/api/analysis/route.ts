@@ -66,20 +66,35 @@ export async function POST(request: Request) {
   }
   const productName = rawReq.productName.trim();
 
-  // ── Validate category ──
+  // ── Validate category / proposed classification ──
   const category = typeof rawReq.category === 'string' && rawReq.category.trim()
     ? rawReq.category.trim()
-    : 'Ayurveda-Aahar';
+    : typeof rawReq.proposed_classification === 'string' && rawReq.proposed_classification.trim()
+    ? rawReq.proposed_classification.trim()
+    : 'no_preference';
 
   // ── Validate form ──
   const form = typeof rawReq.form === 'string' && rawReq.form.trim()
     ? rawReq.form.trim()
     : 'Tablet';
 
-  // ── Validate description ──
+  // ── Validate description / intended use ──
   const description = typeof rawReq.description === 'string'
     ? rawReq.description.trim()
     : '';
+  const intended_use = typeof rawReq.intended_use === 'string' && rawReq.intended_use.trim()
+    ? rawReq.intended_use.trim()
+    : typeof rawReq.intendedUse === 'string' && rawReq.intendedUse.trim()
+    ? rawReq.intendedUse.trim()
+    : description;
+
+  // ── Optional classification facts ──
+  const product_claims = typeof rawReq.product_claims === 'string' ? rawReq.product_claims.trim() : typeof rawReq.productClaims === 'string' ? rawReq.productClaims.trim() : '';
+  const disease_claim_flag = Boolean(rawReq.disease_claim_flag || rawReq.diseaseClaimFlag);
+  const disease_claim_text = typeof rawReq.disease_claim_text === 'string' ? rawReq.disease_claim_text.trim() : typeof rawReq.diseaseClaimText === 'string' ? rawReq.diseaseClaimText.trim() : '';
+  const is_classical_basis = typeof rawReq.is_classical_basis === 'string' ? rawReq.is_classical_basis.trim() : typeof rawReq.isClassicalBasis === 'string' ? rawReq.isClassicalBasis.trim() : 'unknown';
+  const classical_reference = typeof rawReq.classical_reference === 'string' && rawReq.classical_reference.trim() ? rawReq.classical_reference.trim() : typeof rawReq.classicalReference === 'string' && rawReq.classicalReference.trim() ? rawReq.classicalReference.trim() : undefined;
+  const manufacturing_processing = typeof rawReq.manufacturing_processing === 'string' ? rawReq.manufacturing_processing.trim() : typeof rawReq.manufacturingProcessing === 'string' ? rawReq.manufacturingProcessing.trim() : '';
 
   // ── Validate ingredients ──
   const ingredients: IngredientInput[] = [];
@@ -111,10 +126,10 @@ export async function POST(request: Request) {
   const jurisdiction: Jurisdiction = normJur === 'india' ? 'India' : 'International';
 
   // ── Optional traditional knowledge reference ──
-  const traditional_knowledge_ref =
-    typeof rawReq.traditional_knowledge_ref === 'string' && rawReq.traditional_knowledge_ref.trim()
+  const traditional_knowledge_ref = classical_reference ||
+    (typeof rawReq.traditional_knowledge_ref === 'string' && rawReq.traditional_knowledge_ref.trim()
       ? rawReq.traditional_knowledge_ref.trim()
-      : undefined;
+      : undefined);
 
   const analysisId = generateAnalysisId(productName);
   const baseDir = process.cwd();
@@ -148,14 +163,23 @@ export async function POST(request: Request) {
   const payload: Record<string, unknown> = {
     productName,
     category,
+    proposed_classification: category,
     form,
-    description,
+    description: description || intended_use,
+    intended_use,
+    product_claims,
+    disease_claim_flag,
+    disease_claim_text,
+    is_classical_basis,
+    classical_reference,
+    manufacturing_processing,
     ingredients,
     jurisdiction,
   };
   if (traditional_knowledge_ref) {
     payload.traditional_knowledge_ref = traditional_knowledge_ref;
   }
+
 
   const args = [
     scriptPath,
@@ -174,9 +198,9 @@ export async function POST(request: Request) {
         PYTHONIOENCODING: 'utf-8',
         PRODUCT_PAYLOAD: JSON.stringify(payload),
         OPENROUTER_API_KEY: apiKey,
-        LLM_MODEL: process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b',
-        LLM_FALLBACK_MODELS: process.env.LLM_FALLBACK_MODELS || '',
-        LLM_TIMEOUT_SECONDS: process.env.LLM_TIMEOUT_SECONDS || '45',
+        LLM_MODEL: process.env.LLM_MODEL || 'mistralai/mistral-small-24b-instruct-2501',
+        LLM_FALLBACK_MODELS: process.env.LLM_FALLBACK_MODELS || 'meta-llama/llama-3.3-70b-instruct,nvidia/nemotron-3-super-120b-a12b',
+        LLM_TIMEOUT_SECONDS: process.env.LLM_TIMEOUT_SECONDS || '25',
       },
     });
 
