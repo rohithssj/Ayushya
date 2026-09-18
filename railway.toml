@@ -1,5 +1,7 @@
 [build]
 builder = "nixpacks"
+nixPkgs = ["nodejs-22_x"]
+
 
 [deploy]
 startCommand = "npm run start"
