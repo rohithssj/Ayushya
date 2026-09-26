@@ -4,7 +4,6 @@ node_modules/
 venv/
 ENV/
 env/
-.env.example
 
 # Build & Output directories
 .next/
@@ -37,6 +36,10 @@ Thumbs.db
 *.swp
 *.swo
 
-# Temporary scratch scripts & debug logs
+# Temporary scratch scripts, logs & raw resources
 scratch/
 *.log
+.agents/
+brag-output/
+Ayushya-Resources/
+
